@@ -1,7 +1,7 @@
-[package]
-name = "intercept"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[lib]
-crate-type=["staticlib"]
+members = [
+    "remote-pty-slave",
+    "remote-pty-master",
+    "remote-pty-common",
+]
