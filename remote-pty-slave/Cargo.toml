@@ -12,7 +12,3 @@ libc = "0.2.90"
 lazy_static = "1.4.0"
 bincode = "2.0.0-rc.1"
 errno = "0.2.7"
-
-[profile.release]
-panic = "abort"
-lto = true

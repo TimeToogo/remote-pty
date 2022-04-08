@@ -1,0 +1,39 @@
+name: build
+
+on:
+  - push
+
+# TODO: aarch64
+jobs:
+  build:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux
+            arch: x86_64
+    steps:
+    - uses: actions/checkout@v3
+    - name: install apt packages
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -qq build-essential gpg
+    - name: install rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
+        $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-musl
+    - name: build-remote-pty
+      run: cargo build --release --target ${{matrix.arch}}-unknown-linux-musl
+      working-directory: bash-static-remote
+      shell: bash
+    - name: build-bash
+      run: |
+        ./build.sh ${{matrix.arch}}-unknown-linux-musl
+        mv -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}
+      working-directory: bash-static-remote
+      shell: bash
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: bash-${{matrix.target}}-${{matrix.arch}}
+        path: releases/bash-${{matrix.target}}-${{matrix.arch}}

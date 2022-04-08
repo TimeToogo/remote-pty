@@ -6,5 +6,4 @@ RUN apt-get update && apt-get install -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN $HOME/.cargo/bin/rustup target add x86_64-unknown-linux-musl
 
-
 ENTRYPOINT [ "bash" ]
