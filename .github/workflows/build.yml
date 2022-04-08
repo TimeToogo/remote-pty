@@ -3,7 +3,6 @@ name: build
 on:
   - push
 
-# TODO: aarch64
 jobs:
   build:
     runs-on: ${{matrix.os}}
@@ -13,6 +12,9 @@ jobs:
           - os: ubuntu-latest
             target: linux
             arch: x86_64
+          - os: ubuntu-latest
+            target: linux
+            arch: aarch64
     steps:
     - uses: actions/checkout@v3
     - name: install apt packages
