@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcflow.html
 #[no_mangle]
-pub extern "C" fn tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+pub extern "C" fn remote_tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcflow",
         fd,
@@ -22,7 +22,7 @@ pub extern "C" fn tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     )
 }
 
-fn tcflow_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+pub(crate) fn tcflow_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     let action = match action {
         libc::TCOON => TcFlowAction::TCOON,
         libc::TCOOFF => TcFlowAction::TCOOFF,

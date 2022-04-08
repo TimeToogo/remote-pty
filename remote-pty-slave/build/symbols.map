@@ -1,0 +1,2 @@
+ioctl libc_ioctl
+remote_ioctl ioctl

@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcsetattr.html
 #[no_mangle]
-pub extern "C" fn tcsetattr(
+pub extern "C" fn remote_tcsetattr(
     fd: libc::c_int,
     optional_actions: libc::c_int,
     term: *mut libc::termios,
@@ -26,7 +26,7 @@ pub extern "C" fn tcsetattr(
     )
 }
 
-fn tcsetattr_chan(
+pub(crate) fn tcsetattr_chan(
     chan: Arc<dyn RemoteChannel>,
     fd: libc::c_int,
     optional_actions: libc::c_int,
@@ -45,7 +45,7 @@ fn tcsetattr_chan(
     };
 
     let termios = unsafe {
-        #[allow(unused_mut)]
+        #[allow(unused_mut, unused_assignments)]
         let mut c_line = 0;
         #[cfg(target_os = "linux")]
         {
@@ -62,8 +62,14 @@ fn tcsetattr_chan(
             c_lflag: (*term).c_lflag as _,
             c_line,
             c_cc: c_cc.try_into().expect("invalid cc length"),
+            #[cfg(any(target_env = "gnu", target_os = "macos"))]
             c_ispeed: (*term).c_ispeed as _,
+            #[cfg(any(target_env = "gnu", target_os = "macos"))]
             c_ospeed: (*term).c_ospeed as _,
+            #[cfg(target_env = "musl")]
+            c_ispeed: (*term).__c_ispeed as _,
+            #[cfg(target_env = "musl")]
+            c_ospeed: (*term).__c_ospeed as _,
         }
     };
 
@@ -98,7 +104,7 @@ mod tests {
     use crate::{channel::mock::MockChannel, tcsetattr::tcsetattr_chan};
 
     #[test]
-    fn test_tcgetattr() {
+    fn test_tcsetattr() {
         let mock_termios = Termios {
             c_iflag: 1,
             c_oflag: 2,
@@ -129,8 +135,14 @@ mod tests {
             #[cfg(target_os = "linux")]
             c_line: 5,
             c_cc: [0; libc::NCCS],
+            #[cfg(any(target_env = "gnu", target_os = "macos"))]
             c_ispeed: 6,
+            #[cfg(any(target_env = "gnu", target_os = "macos"))]
             c_ospeed: 7,
+            #[cfg(target_env = "musl")]
+            __c_ispeed: 6,
+            #[cfg(target_env = "musl")]
+            __c_ospeed: 7,
         };
 
         let res = tcsetattr_chan(

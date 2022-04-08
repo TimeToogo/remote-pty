@@ -14,6 +14,7 @@ pub enum PtySlaveCall {
     IsATty(IsATtyCall),
     GetWinSize(TcGetWinSizeCall),
     SetWinSize(TcSetWinSizeCall),
+    Ioctl
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html

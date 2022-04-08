@@ -14,7 +14,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/isatty.html
 #[no_mangle]
-pub extern "C" fn isatty(fd: libc::c_int) -> libc::c_int {
+pub extern "C" fn remote_isatty(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
         "isatty",
         fd,
@@ -23,7 +23,7 @@ pub extern "C" fn isatty(fd: libc::c_int) -> libc::c_int {
     )
 }
 
-fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
+pub(crate) fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
 {
     // send isatty request to remote
     let req = PtySlaveCall::IsATty(IsATtyCall { fd: Fd(fd) });

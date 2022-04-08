@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetattr.html
 #[no_mangle]
-pub extern "C" fn tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
+pub extern "C" fn remote_tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
     handle_intercept(
         "tcgetattr",
         fd,
@@ -22,7 +22,7 @@ pub extern "C" fn tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::
     )
 }
 
-fn tcgetattr_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, term: *mut libc::termios) -> libc::c_int
+pub(crate) fn tcgetattr_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, term: *mut libc::termios) -> libc::c_int
 {
     // send tcgetattr request to remote
     let req = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(fd) });
@@ -48,11 +48,19 @@ fn tcgetattr_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, term: *mut libc
         (*term)
             .c_cc
             .copy_from_slice(&remote_term.termios.c_cc[..libc::NCCS]);
-        (*term).c_ispeed = remote_term.termios.c_ispeed as libc::speed_t;
-        (*term).c_ospeed = remote_term.termios.c_ospeed as libc::speed_t;
         #[cfg(target_os = "linux")]
         {
             (*term).c_line = remote_term.termios.c_line as libc::cc_t;
+        }
+        #[cfg(any(target_env = "gnu", target_os = "macos"))]
+        {
+            (*term).c_ispeed = remote_term.termios.c_ispeed as libc::speed_t;
+            (*term).c_ospeed = remote_term.termios.c_ospeed as libc::speed_t;
+        }
+        #[cfg(target_env = "musl")]
+        {
+            (*term).__c_ispeed = remote_term.termios.c_ispeed as libc::speed_t;
+            (*term).__c_ospeed = remote_term.termios.c_ospeed as libc::speed_t;
         }
     }
 
@@ -98,10 +106,16 @@ mod tests {
             c_cflag: 0,
             c_lflag: 0,
             c_cc: [0; libc::NCCS],
-            c_ispeed: 0,
-            c_ospeed: 0,
             #[cfg(target_os = "linux")]
             c_line: 0,
+            #[cfg(not(target_os = "linux"))]
+            c_ispeed: 0,
+            #[cfg(not(target_os = "linux"))]
+            c_ospeed: 0,
+            #[cfg(target_os = "linux")]
+            __c_ispeed: 0,
+            #[cfg(target_os = "linux")]
+            __c_ospeed: 0,
         };
 
         let res = tcgetattr_chan(Arc::new(chan), 1, &mut termios as *mut libc::termios);
@@ -114,7 +128,15 @@ mod tests {
         #[cfg(target_os = "linux")]
         assert_eq!(termios.c_line, 5);
         assert_eq!(termios.c_cc, [1; libc::NCCS]);
-        assert_eq!(termios.c_ispeed, 6);
-        assert_eq!(termios.c_ospeed, 7);
+        #[cfg(any(target_env = "gnu", target_os = "macos"))]
+        {
+            assert_eq!(termios.c_ispeed, 6);
+            assert_eq!(termios.c_ospeed, 7);
+        }
+        #[cfg(target_env = "musl")]
+        {
+            assert_eq!(termios.__c_ispeed, 6);
+            assert_eq!(termios.__c_ospeed, 7);
+        }
     }
 }

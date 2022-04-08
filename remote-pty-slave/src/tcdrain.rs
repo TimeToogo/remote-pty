@@ -14,7 +14,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcdrain.html
 #[no_mangle]
-pub extern "C" fn tcdrain(fd: libc::c_int) -> libc::c_int {
+pub extern "C" fn remote_tcdrain(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcdrain",
         fd,
@@ -23,7 +23,7 @@ pub extern "C" fn tcdrain(fd: libc::c_int) -> libc::c_int {
     )
 }
 
-fn tcdrain_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
+pub(crate) fn tcdrain_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
 {
     // send tcdrain request to remote
     let req = PtySlaveCall::Drain(TcDrainCall { fd: Fd(fd) });

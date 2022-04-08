@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcflush.html
 #[no_mangle]
-pub extern "C" fn tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
+pub extern "C" fn remote_tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcflush",
         fd,
@@ -22,7 +22,7 @@ pub extern "C" fn tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc:
     )
 }
 
-fn tcflush_chan(
+pub(crate) fn tcflush_chan(
     chan: Arc<dyn RemoteChannel>,
     fd: libc::c_int,
     queue_selector: libc::c_int,
