@@ -29,7 +29,7 @@
 set -e 
 set -o pipefail
 
-DIR=$(dirname $0)
+DIR=$(realpath $(dirname $0))
 
 # load version info
 bash_version="5.1"
