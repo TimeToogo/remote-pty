@@ -1,31 +1,28 @@
 use std::sync::Arc;
 
-use remote_pty_common::{
-    proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall},
-        Fd,
-    },
+use remote_pty_common::proto::{
+    slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall},
+    Fd,
 };
 
 use crate::{
-    channel::{get_remote_channel, RemoteChannel},
+    channel::RemoteChannel,
+    common::handle_intercept,
     err::{generic_error, tc_error},
 };
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetattr.html
 #[no_mangle]
 pub extern "C" fn tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
-    let chan = match get_remote_channel() {
-        Ok(chan) => chan,
-        Err(msg) => return generic_error("tcgetattr", msg),
-    };
-
-    tcgetattr_chan(chan, fd, term)
+    handle_intercept(
+        "tcgetattr",
+        fd,
+        |chan| tcgetattr_chan(chan, fd, term),
+        || unsafe { libc::tcgetattr(fd, term) },
+    )
 }
 
-fn tcgetattr_chan<C>(chan: Arc<C>, fd: libc::c_int, term: *mut libc::termios) -> libc::c_int
-where
-    C: RemoteChannel,
+fn tcgetattr_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, term: *mut libc::termios) -> libc::c_int
 {
     // send tcgetattr request to remote
     let req = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(fd) });
@@ -59,7 +56,7 @@ where
         }
     }
 
-    return 0;
+    return remote_term.ret as _;
 }
 
 #[cfg(test)]
@@ -67,7 +64,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, TcGetAttrCall, PtySlaveResponse, TcGetAttrResponse},
+        slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall, TcGetAttrResponse},
         Fd, Termios,
     };
 
@@ -86,9 +83,12 @@ mod tests {
             c_line: 5,
             c_cc: [1; 32],
             c_ispeed: 6,
-            c_ospeed: 7
+            c_ospeed: 7,
         };
-        let mock_res = PtySlaveResponse::GetAttr(TcGetAttrResponse { termios: mock_termios });
+        let mock_res = PtySlaveResponse::GetAttr(TcGetAttrResponse {
+            ret: 0,
+            termios: mock_termios,
+        });
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
 
@@ -100,6 +100,8 @@ mod tests {
             c_cc: [0; libc::NCCS],
             c_ispeed: 0,
             c_ospeed: 0,
+            #[cfg(target_os = "linux")]
+            c_line: 0,
         };
 
         let res = tcgetattr_chan(Arc::new(chan), 1, &mut termios as *mut libc::termios);

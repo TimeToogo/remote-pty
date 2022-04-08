@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-use crate::proto::{Fd, Termios};
+use crate::proto::{Fd, Termios, WinSize};
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
@@ -11,6 +11,9 @@ pub enum PtySlaveCall {
     Flow(TcFlowCall),
     Flush(TcFlushCall),
     SendBreak(TcSendBreakCall),
+    IsATty(IsATtyCall),
+    GetWinSize(TcGetWinSizeCall),
+    SetWinSize(TcSetWinSizeCall),
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
@@ -23,7 +26,15 @@ pub struct TcGetAttrCall {
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcSetAttrCall {
     pub fd: Fd,
+    pub optional_actions: TcSetAttrActions,
     pub termios: Termios,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum TcSetAttrActions {
+    TCSANOW,
+    TCSADRAIN,
+    TCSAFLUSH,
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcdrain.html
@@ -51,7 +62,7 @@ pub enum TcFlowAction {
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcFlushCall {
     pub fd: Fd,
-    pub action: TcFlushQueueSelector,
+    pub queue_selector: TcFlushQueueSelector,
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
@@ -66,6 +77,25 @@ pub enum TcFlushQueueSelector {
 pub struct TcSendBreakCall {
     pub fd: Fd,
     pub duration: u32,
+}
+
+// @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/isatty.html
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct IsATtyCall {
+    pub fd: Fd,
+}
+
+// equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct TcGetWinSizeCall {
+    pub fd: Fd,
+}
+
+// equivalent to ioctl(fd, TIOCSWINSZ, *winsize)
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct TcSetWinSizeCall {
+    pub fd: Fd,
+    pub winsize: WinSize
 }
 
 #[cfg(test)]

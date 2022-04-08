@@ -61,11 +61,11 @@ mod tests {
     fn test_mock_channel() {
         let chan = MockChannel::new(
             vec![PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) })],
-            vec![PtySlaveResponse::Success],
+            vec![PtySlaveResponse::Success(1)],
         );
 
         let res = chan.send(PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) })).unwrap();
 
-        assert_eq!(res, PtySlaveResponse::Success);
+        assert_eq!(res, PtySlaveResponse::Success(1));
     }
 }

@@ -15,5 +15,14 @@ pub struct Termios {
     pub c_ospeed: u32,  /* output speed */
 }
 
+// @see https://code.woboq.org/userspace/glibc/sysdeps/unix/sysv/linux/bits/ioctl-types.h.html#winsize
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct WinSize {
+    pub ws_row: u16,
+    pub ws_col: u16,
+    pub ws_xpixel: u16,
+    pub ws_ypixel: u16,
+}
+
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct Fd(pub i32);
