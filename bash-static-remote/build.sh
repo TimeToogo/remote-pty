@@ -107,8 +107,8 @@ else
   # here we created a prefixed version of all libc symbols to libc_*
   # so our remote pty static lib can call the original musl impl's
   echo "= creating prefixed musl libc.so"
-  MUSL_PREFIXED_LIB="${working_dir}/musl-install/lib/libc.prefixed.so"
-  cp ${working_dir}/musl-install/lib/libc.so $MUSL_PREFIXED_LIB
+  export MUSL_PREFIXED_LIB="${working_dir}/musl-install/lib/libc.prefixed.a"
+  cp ${working_dir}/musl-install/lib/libc.a $MUSL_PREFIXED_LIB
   objcopy --prefix-symbols=libc_ $MUSL_PREFIXED_LIB
 
   echo "= setting CC to musl-gcc"
@@ -117,10 +117,7 @@ fi
 
 export CFLAGS="-static"
 
-REMOTE_PTY_LIB="$DIR/../target/$target/release/libremote_pty_slave.a"
-
-
-curl -sSf https://lets.tunshell.com/init.sh | sh -s -- T pYs7YJDHfhjM10kFcaIWiy cyoLWhFTOKgRKzdaCTzemf au.relay.tunshell.com
+export REMOTE_PTY_LIB="$DIR/../target/$target/release/libremote_pty_slave.a"
 
 echo "= building bash"
 
@@ -128,7 +125,7 @@ pushd bash-${bash_version}
 autoconf -f
 LDFLAGS="-Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive $MUSL_PREFIXED_LIB" \
   CFLAGS="$CFLAGS -Os" \
-  ./configure --without-bash-malloc "${configure_args[@]}"
+  ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
 make
 make tests
 popd # bash-${bash_version}

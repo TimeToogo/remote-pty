@@ -24,8 +24,9 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
         $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-musl
     - name: build-remote-pty
-      run: cargo build --release --target ${{matrix.arch}}-unknown-linux-musl
-      working-directory: bash-static-remote
+      run: |
+        cargo build --release --target ${{matrix.arch}}-unknown-linux-musl
+        ./remote-pty-slave/build/post-build.sh
       shell: bash
     - name: build-bash
       run: |
