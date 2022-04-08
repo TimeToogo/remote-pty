@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use remote_pty_common::log::debug;
 
-use crate::{channel::{RemoteChannel, get_remote_channel}, conf::get_conf, err::generic_error};
+use crate::{channel::{RemoteChannel, get_remote_channel}, conf::get_conf};
 
 // boilerplate logic for intercepting a libc function
 // operating on a fd
@@ -23,7 +23,10 @@ where
     // first we get the config from the env
     let conf = match get_conf() {
         Ok(conf) => conf,
-        Err(msg) => return generic_error(func_name, msg).into(),
+        Err(msg) => {
+            debug(msg);
+            return fallback_cb();
+        }
     };
 
     // if the function was called with an fd outside of the
@@ -36,7 +39,10 @@ where
     // else we get the channel and send the request to the remote
     let chan = match get_remote_channel(&conf) {
         Ok(chan) => chan,
-        Err(msg) => return generic_error(func_name, msg).into(),
+        Err(msg) => {
+            debug(msg);
+            return fallback_cb();
+        }
     };
 
     remote_cb(chan)

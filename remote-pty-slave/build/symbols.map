@@ -1,2 +1,28 @@
+# we override the symbols pointing to libc with the prefix "libc_" so they
+# can be later linked to their libc impl's when building bash
+#
+# we then rename our versions (remote_*) to the original libc names
+# so bash will will link against ours 
+#
 ioctl libc_ioctl
 remote_ioctl ioctl
+isatty libc_isatty
+remote_isatty isatty
+tcdrain libc_tcdrain
+remote_tcdrain tcdrain
+tcflow libc_tcflow
+remote_tcflow tcflow
+tcflush libc_tcflush
+remote_tcflush tcflush
+tcgetattr libc_tcgetattr
+remote_tcgetattr tcgetattr
+tcgetsid libc_tcgetsid
+remote_tcgetsid tcgetsid
+tcgetwinsize libc_tcgetwinsize
+remote_tcgetwinsize tcgetwinsize
+tcsendbreak libc_tcsendbreak
+remote_tcsendbreak tcsendbreak
+tcsetattr libc_tcsetattr
+remote_tcsetattr tcsetattr
+tcsetwinsize libc_tcsetwinsize
+remote_tcsetwinsize tcsetwinsize
