@@ -32,7 +32,7 @@ jobs:
       shell: bash
     - name: build-bash
       run: |
-        ./build.sh ${{matrix.arch}}-unknown-linux-musl
+        ./build.sh ${{matrix.target}} ${{matrix.arch}}
         mv -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}
       working-directory: bash-static-remote
       shell: bash

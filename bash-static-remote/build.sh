@@ -37,9 +37,15 @@ bash_patch_level=16
 musl_version="1.2.3"
 
 target="$1"
+arch="$2"
 
 if [[ "$target" == "" ]]; then
   echo "! no target specified" >&2
+  exit 1
+fi
+
+if [[ "$arch" == "" ]]; then
+  echo "! no arch specified" >&2
   exit 1
 fi
 
@@ -100,7 +106,7 @@ else
   install_dir=${working_dir}/musl-install
 
   pushd musl-${musl_version}
-  ./configure --prefix="${install_dir}"
+  ./configure --prefix="${install_dir}" --target=$arch
   make install
   popd # musl-${musl-version}
 
@@ -117,7 +123,7 @@ fi
 
 export CFLAGS="-static"
 
-export REMOTE_PTY_LIB="$DIR/../target/$target/release/libremote_pty_slave.a"
+export REMOTE_PTY_LIB="$DIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.a"
 
 echo "= building bash"
 
