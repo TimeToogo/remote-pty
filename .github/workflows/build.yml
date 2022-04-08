@@ -28,7 +28,7 @@ jobs:
     - name: build-remote-pty
       run: |
         cargo build --release --target ${{matrix.arch}}-unknown-linux-musl
-        ./remote-pty-slave/build/post-build.sh
+        ./remote-pty-slave/build/post-build.sh ${{matrix.arch}}-unknown-linux-musl
       shell: bash
     - name: build-bash
       run: |
