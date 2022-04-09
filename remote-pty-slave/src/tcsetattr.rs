@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcsetattr.html
 #[no_mangle]
-pub extern "C" fn remote_tcsetattr(
+pub extern "C" fn intercept_tcsetattr(
     fd: libc::c_int,
     optional_actions: libc::c_int,
     term: *mut libc::termios,

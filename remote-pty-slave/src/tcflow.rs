@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcflow.html
 #[no_mangle]
-pub extern "C" fn remote_tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+pub extern "C" fn intercept_tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcflow",
         fd,

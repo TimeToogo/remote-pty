@@ -6,7 +6,7 @@ use crate::{channel::RemoteChannel, common::handle_intercept};
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetsid.html
 #[no_mangle]
-pub extern "C" fn remote_tcgetsid(fd: libc::c_int) -> libc::c_int {
+pub extern "C" fn intercept_tcgetsid(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcgetsid",
         fd,

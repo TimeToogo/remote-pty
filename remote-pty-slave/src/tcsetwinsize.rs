@@ -14,7 +14,7 @@ use crate::{
 // non-standard but equivalent to ioctl(fd, TCIOSWINSZ, *winsize)
 // @see https://fossies.org/dox/musl-1.2.2/tcsetwinsize_8c_source.html
 #[no_mangle]
-pub extern "C" fn remote_tcsetwinsize(
+pub extern "C" fn intercept_tcsetwinsize(
     fd: libc::c_int,
     winsize: *mut libc::winsize,
 ) -> libc::c_int {

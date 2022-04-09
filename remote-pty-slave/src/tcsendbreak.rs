@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcsendbreak.html
 #[no_mangle]
-pub extern "C" fn remote_tcsendbreak(fd: libc::c_int, duration: libc::c_int) -> libc::c_int {
+pub extern "C" fn intercept_tcsendbreak(fd: libc::c_int, duration: libc::c_int) -> libc::c_int {
     handle_intercept(
         "tcsendbreak",
         fd,

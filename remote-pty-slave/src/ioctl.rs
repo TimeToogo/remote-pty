@@ -14,7 +14,7 @@ type Cmd = libc::c_ulong;
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/ioctl.html
 // @see https://code.woboq.org/userspace/glibc/sysdeps/unix/sysv/linux/powerpc/ioctl.c.html
 #[no_mangle]
-pub extern "C" fn remote_ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
+pub extern "C" fn intercept_ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
     handle_intercept(
         "ioctl",
         fd,
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_ioctl() {
-        println!("test ioctl: {}", crate::remote_ioctl as *mut u8 as u64);
+        println!("test ioctl: {}", crate::intercept_ioctl as *mut u8 as u64);
         println!("test libc::ioctl: {}", libc::ioctl as *mut u8 as u64);
         // println!("test libc_ioctl: {}", libc_ioctl as *mut u8 as u64);
     }

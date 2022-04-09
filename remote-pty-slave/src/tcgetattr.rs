@@ -13,7 +13,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetattr.html
 #[no_mangle]
-pub extern "C" fn remote_tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
+pub extern "C" fn intercept_tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
     handle_intercept(
         "tcgetattr",
         fd,
