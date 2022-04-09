@@ -14,7 +14,7 @@ pub enum PtySlaveCall {
     IsATty(IsATtyCall),
     GetWinSize(TcGetWinSizeCall),
     SetWinSize(TcSetWinSizeCall),
-    Ioctl
+    Ioctl(IoctlCall)
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
@@ -97,6 +97,21 @@ pub struct TcGetWinSizeCall {
 pub struct TcSetWinSizeCall {
     pub fd: Fd,
     pub winsize: WinSize
+}
+
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct IoctlCall {
+    pub fd: Fd,
+    pub cmd: IoctlCmd
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum IoctlCmd {
+    FIONREAD,
+    TIOCOUTQ,
+    TIOCGETD,
+    TIOCSETD(u32),
 }
 
 #[cfg(test)]

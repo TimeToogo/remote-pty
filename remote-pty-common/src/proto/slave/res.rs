@@ -7,6 +7,7 @@ pub enum PtySlaveResponse {
     Success(i64),
     GetAttr(TcGetAttrResponse),
     GetWinSize(TcGetWinSizeResponse),
+    Ioctl(IoctlResponse),
     Error(TcError),
 }
 
@@ -32,6 +33,17 @@ pub enum TcError {
     ENOTTY,
     EINTR,
     EIO,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct IoctlResponse {
+    pub ret: i64,
+    pub val: IoctlValueResponse,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum IoctlValueResponse {
+    Int(i64)
 }
 
 #[cfg(test)]
