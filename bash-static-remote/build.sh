@@ -106,7 +106,7 @@ else
   install_dir=${working_dir}/musl-install
 
   pushd musl-${musl_version}
-  ./configure --prefix="${install_dir}" --target=$arch
+  ./configure --prefix="${install_dir}" 
   make install
   popd # musl-${musl-version}
 
