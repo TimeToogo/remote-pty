@@ -19,11 +19,6 @@ pub extern "C" fn intercept_isatty(fd: libc::c_int) -> libc::c_int {
         fd,
         |chan| isatty_chan(chan, fd),
         || unsafe { libc::isatty(fd) }
-        // || unsafe {
-        //     let isatty =
-        //         libc::dlsym(libc::RTLD_NEXT, cstr::cstr!("isatty").as_ptr()) as *const extern "C" libc::isatty;
-        //     (*isatty)(fd) 
-        // },
     )
 }
 
