@@ -110,13 +110,6 @@ else
   make install
   popd # musl-${musl-version}
 
-  # here we created a prefixed version of all libc symbols to libc_*
-  # so our remote pty static lib can call the original musl impl's
-  echo "= creating prefixed musl libc.so"
-  export MUSL_PREFIXED_LIB="${working_dir}/musl-install/lib/libc.prefixed.a"
-  cp ${working_dir}/musl-install/lib/libc.a $MUSL_PREFIXED_LIB
-  objcopy --prefix-symbols=libc_ $MUSL_PREFIXED_LIB
-
   echo "= setting CC to musl-gcc"
   export CC=${working_dir}/musl-install/bin/musl-gcc
 fi
@@ -129,7 +122,9 @@ echo "= building bash"
 
 pushd bash-${bash_version}
 autoconf -f
-LDFLAGS="-Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive $MUSL_PREFIXED_LIB" \
+# statically link against our remote-pty-slave library
+# overriding the musl tty functions
+LDFLAGS="-Wl,--whole-archive $REMOTE_PTY_LIB" \
   CFLAGS="$CFLAGS -Os" \
   ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
 make

@@ -4,12 +4,12 @@ pub mod common;
 
 mod err;
 
+mod isatty;
+pub use isatty::*;
 mod tcgetattr;
 pub use tcgetattr::*;
 mod tcsetattr;
 pub use tcsetattr::*;
-mod isatty;
-pub use isatty::*;
 mod tcdrain;
 pub use tcdrain::*;
 mod tcflow;

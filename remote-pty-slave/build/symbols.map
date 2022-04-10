@@ -1,9 +1,3 @@
-# we override the symbols pointing to libc with the prefix "libc_" so they
-# can be later linked to their libc impl's when building bash
-#
-# we then rename our versions (intercept_*) to the original libc names
-# so bash will will link against ours 
-#
 ioctl libc_ioctl
 intercept_ioctl ioctl
 isatty libc_isatty

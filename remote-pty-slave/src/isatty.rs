@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
-use remote_pty_common::{
-    proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, IsATtyCall},
-        Fd,
-    },
+use remote_pty_common::proto::{
+    slave::{IsATtyCall, PtySlaveCall, PtySlaveResponse},
+    Fd,
 };
 
 use crate::{
     channel::RemoteChannel,
-    err::{generic_error, tc_error}, common::handle_intercept,
+    common::handle_intercept,
+    err::{generic_error, tc_error},
 };
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/isatty.html
@@ -19,12 +18,16 @@ pub extern "C" fn intercept_isatty(fd: libc::c_int) -> libc::c_int {
         "isatty",
         fd,
         |chan| isatty_chan(chan, fd),
-        || unsafe { libc::isatty(fd) },
+        || unsafe { libc::isatty(fd) }
+        // || unsafe {
+        //     let isatty =
+        //         libc::dlsym(libc::RTLD_NEXT, cstr::cstr!("isatty").as_ptr()) as *const extern "C" libc::isatty;
+        //     (*isatty)(fd) 
+        // },
     )
 }
 
-pub(crate) fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
-{
+pub(crate) fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int {
     // send isatty request to remote
     let req = PtySlaveCall::IsATty(IsATtyCall { fd: Fd(fd) });
 
@@ -45,7 +48,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, IsATtyCall},
+        slave::{IsATtyCall, PtySlaveCall, PtySlaveResponse},
         Fd,
     };
 
