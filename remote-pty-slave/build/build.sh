@@ -67,7 +67,9 @@ rm -f libremote_pty_slave_linked.a
 ar crs libremote_pty_slave.linked.a $TARGETDIR/combinedlib/*
 
 echo "= creating shared lib from static lib"
-gcc -nodefaultlibs -shared -fPIC -o ./libremote_pty_slave.linked.so \
-    -Wl,--whole-archive $TARGETDIR/libremote_pty_slave.linked.a
+gcc -Wl,-Map -Wl,mapfile -shared -fPIC -flto -o ./libremote_pty_slave.linked.so \
+    -Wl,--whole-archive $TARGETDIR/libremote_pty_slave.linked.a \
+    -Wl,--no-whole-archive \
+    -Wl,-lpthread
 
 echo "= done"
