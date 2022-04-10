@@ -124,7 +124,7 @@ pushd bash-${bash_version}
 autoconf -f
 # statically link against our remote-pty-slave library
 # overriding the musl tty functions
-LDFLAGS="-Wl,--whole-archive $REMOTE_PTY_LIB" \
+LDFLAGS="-Wl,-zmuldefs -Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive" \
   CFLAGS="$CFLAGS -Os" \
   ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
 make
