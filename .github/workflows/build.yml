@@ -43,3 +43,11 @@ jobs:
       with:
         name: bash-${{matrix.target}}-${{matrix.arch}}
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: libremote_pty_slave-${{matrix.target}}-${{matrix.arch}}.a
+        path: target/${{matrix.arch}}-unknown-${{matrix.target}}-musl/release/libremote_pty_slave.linked.a
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: libremote_pty_slave-${{matrix.target}}-${{matrix.arch}}.so
+        path: target/${{matrix.arch}}-unknown-${{matrix.target}}-musl/release/libremote_pty_slave.linked.so
