@@ -116,7 +116,7 @@ fi
 
 export CFLAGS="-static"
 
-export REMOTE_PTY_LIB="$DIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.a"
+export REMOTE_PTY_LIB="$DIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.linked.a"
 
 echo "= building bash"
 
