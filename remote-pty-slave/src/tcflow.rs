@@ -15,7 +15,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     handle_intercept(
-        "tcflow",
+        format!("tcflow({})", fd),
         fd,
         |chan| tcflow_chan(chan, fd, action),
         || unsafe { libc::tcflow(fd, action) },

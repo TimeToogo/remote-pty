@@ -19,7 +19,7 @@ pub extern "C" fn intercept_tcsetattr(
     term: *mut libc::termios,
 ) -> libc::c_int {
     handle_intercept(
-        "tcsetattr",
+        format!("tcsetattr({}, ...)", fd),
         fd,
         |chan| tcsetattr_chan(chan, fd, optional_actions, term),
         || unsafe { libc::tcsetattr(fd, optional_actions, term) },

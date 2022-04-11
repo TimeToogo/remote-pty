@@ -1,8 +1,14 @@
-use std::io::{self, Result};
+use std::{io::{self, Result}, sync::{Arc, Mutex}};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct Context {
     pub pty: PtyPair,
+    pub state: Arc<Mutex<TerminalState>>
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct TerminalState {
+    pub pgrp: i32
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -17,6 +23,7 @@ impl Context {
     pub fn from_pair(master: PtyFd, slave: PtyFd) -> Self {
         Self {
             pty: PtyPair { master, slave },
+            state: Arc::new(Mutex::new(TerminalState::new()))
         }
     }
 
@@ -45,6 +52,14 @@ impl Context {
         };
 
         Ok(Self::from_pair(master, slave))
+    }
+}
+
+impl TerminalState {
+    pub fn new() -> Self {
+        Self {
+            pgrp: -1
+        }
     }
 }
 

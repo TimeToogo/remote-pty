@@ -24,7 +24,11 @@ pub enum PtySlaveCallType {
     // equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
     GetWinSize,
     SetWinSize(TcSetWinSizeCall),
-    Ioctl(IoctlCall)
+    Ioctl(IoctlCall),
+    // equivalent to ioctl(fd, TIOCGPGRP, *pgrp)
+    // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
+    GetProcGroup,
+    SetProgGroup(SetProcGroupCall)
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html
@@ -86,6 +90,11 @@ pub enum IoctlCall {
     TIOCOUTQ,
     TIOCGETD,
     TIOCSETD(u32),
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct SetProcGroupCall {
+    pub pid: u32
 }
 
 #[cfg(test)]

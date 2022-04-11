@@ -16,7 +16,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_tcdrain(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
-        "tcdrain",
+        format!("tcdrain({})", fd),
         fd,
         |chan| tcdrain_chan(chan, fd),
         || unsafe { libc::tcdrain(fd) },

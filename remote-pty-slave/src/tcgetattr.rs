@@ -15,7 +15,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
     handle_intercept(
-        "tcgetattr",
+        format!("tcgetattr({})", fd),
         fd,
         |chan| tcgetattr_chan(chan, fd, term),
         || unsafe { libc::tcgetattr(fd, term) },

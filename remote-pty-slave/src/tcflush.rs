@@ -15,7 +15,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
     handle_intercept(
-        "tcflush",
+        format!("tcflush({})", fd),
         fd,
         |chan| tcflush_chan(chan, fd, queue_selector),
         || unsafe { libc::tcflush(fd, queue_selector) },

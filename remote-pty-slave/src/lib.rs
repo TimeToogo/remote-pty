@@ -26,3 +26,7 @@ mod tcsetwinsize;
 pub use tcsetwinsize::*;
 mod ioctl;
 pub use ioctl::*;
+mod tcgetpgrp;
+pub use tcgetpgrp::*;
+mod tcsetpgrp;
+pub use tcsetpgrp::*;

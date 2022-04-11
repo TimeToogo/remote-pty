@@ -10,6 +10,10 @@ mod tcgetwinsize;
 pub use tcgetwinsize::*;
 mod tcsetwinsize;
 pub use tcsetwinsize::*;
+mod tcgetpgrp;
+pub use tcgetpgrp::*;
+mod tcsetpgrp;
+pub use tcsetpgrp::*;
 
 use remote_pty_common::{
     log::debug,
@@ -35,6 +39,8 @@ impl RemotePtyServer {
             PtySlaveCallType::GetWinSize => handle_tcgetwinsize(ctx),
             PtySlaveCallType::SetWinSize(req) => handle_tcsetwinsize(ctx, req),
             PtySlaveCallType::Ioctl(_) => todo!(),
+            PtySlaveCallType::GetProcGroup => handle_tcgetpgrp(ctx),
+            PtySlaveCallType::SetProgGroup(_) => todo!(),
         };
 
         debug(format!("response: {:?}", res));

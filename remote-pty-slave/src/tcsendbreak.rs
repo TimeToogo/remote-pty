@@ -15,7 +15,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_tcsendbreak(fd: libc::c_int, duration: libc::c_int) -> libc::c_int {
     handle_intercept(
-        "tcsendbreak",
+        format!("tcsendbreak({}, ...)", fd),
         fd,
         |chan| tcsendbreak_chan(chan, fd, duration),
         || unsafe { libc::tcsendbreak(fd, duration) },

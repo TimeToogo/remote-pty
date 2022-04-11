@@ -19,7 +19,7 @@ pub extern "C" fn intercept_tcgetwinsize(
     winsize: *mut libc::winsize,
 ) -> libc::c_int {
     handle_intercept(
-        "tcgetwinsize",
+        format!("tcgetwinsize({})", fd),
         fd,
         |chan| tcgetwinsize_chan(chan, fd, winsize),
         || unsafe { libc::ioctl(fd, libc::TIOCGWINSZ, winsize) },

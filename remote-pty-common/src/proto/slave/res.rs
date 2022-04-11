@@ -8,6 +8,7 @@ pub enum PtySlaveResponse {
     GetAttr(TcGetAttrResponse),
     GetWinSize(TcGetWinSizeResponse),
     Ioctl(IoctlResponse),
+    GetProcGroup(ProcGroupResponse),
     Error(TcError),
 }
 
@@ -44,6 +45,11 @@ pub struct IoctlResponse {
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum IoctlValueResponse {
     Int(i64)
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct ProcGroupResponse {
+    pub pid: i32
 }
 
 #[cfg(test)]

@@ -16,7 +16,7 @@ use crate::{
 #[no_mangle]
 pub extern "C" fn intercept_isatty(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
-        "isatty",
+        format!("isatty({})", fd),
         fd,
         |chan| isatty_chan(chan, fd),
         || unsafe { libc::isatty(fd) }

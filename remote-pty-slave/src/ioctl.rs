@@ -5,8 +5,8 @@ use remote_pty_common::{
     log::debug,
     proto::{
         slave::{
-            IoctlCall, IoctlResponse, IoctlValueResponse, PtySlaveCall,
-            PtySlaveCallType, PtySlaveResponse,
+            IoctlCall, IoctlResponse, IoctlValueResponse, PtySlaveCall, PtySlaveCallType,
+            PtySlaveResponse,
         },
         Fd,
     },
@@ -29,7 +29,7 @@ pub extern "C" fn intercept_ioctl(
     arg: *mut libc::c_void,
 ) -> libc::c_int {
     handle_intercept(
-        "ioctl",
+        format!("ioctl({}, {}, ...)", fd, cmd),
         fd,
         |chan| ioctl_chan(chan, fd, cmd, arg),
         || unsafe { libc::ioctl(fd, cmd, arg) },
@@ -93,10 +93,11 @@ fn ioctl_chan(
         _ if cmd == libc::TIOCCONS as _ => cmd_unimplemented("TIOCCONS"),
         _ if cmd == libc::TIOCSCTTY as _ => cmd_unimplemented("TIOCSCTTY"),
         _ if cmd == libc::TIOCNOTTY as _ => cmd_unimplemented("TIOCNOTTY"),
-        _ if cmd == libc::TIOCGPGRP as _ => cmd_unimplemented("TIOCGPGRP"),
-        // we fake the success of changing terminal process groups
-        // since our remote terminal doesn't see these as individual procs
-        _ if cmd == libc::TIOCSPGRP as _ => return 0,
+        _ if cmd == libc::TIOCGPGRP as _ => unsafe {
+            *(arg as *mut _) = crate::tcgetpgrp_chan(chan, fd);
+            return 0;
+        },
+        _ if cmd == libc::TIOCSPGRP as _ => crate::tcsetpgrp_chan(chan, fd, unsafe { *(arg as *mut libc::pid_t) }),
         _ if cmd == libc::TIOCEXCL as _ => cmd_unimplemented("TIOCEXCL"),
         _ if cmd == libc::TIOCNXCL as _ => cmd_unimplemented("TIOCNXCL"),
         _ if cmd == libc::TIOCGETD as _ => ioctl_get_int(chan, fd, IoctlCall::TIOCGETD, arg),
@@ -110,7 +111,10 @@ fn ioctl_chan(
         _ if cmd == libc::TIOCMSET as _ => cmd_unimplemented("TIOCMSET"),
         _ if cmd == libc::TIOCMBIC as _ => cmd_unimplemented("TIOCMBIC"),
         _ if cmd == libc::TIOCMBIS as _ => cmd_unimplemented("TIOCMBIS"),
-        _ => unsafe { libc::ioctl(fd, cmd, arg) },
+        _ => unsafe {
+            debug("falling back to native ioctl");
+            libc::ioctl(fd, cmd, arg)
+        },
     }
 }
 
@@ -177,7 +181,7 @@ mod tests {
     use remote_pty_common::proto::{
         slave::{
             IoctlCall, IoctlResponse, IoctlValueResponse, PtySlaveCall, PtySlaveCallType,
-            PtySlaveResponse,
+            PtySlaveResponse, ProcGroupResponse, SetProcGroupCall,
         },
         Fd,
     };
@@ -282,6 +286,51 @@ mod tests {
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 10 as libc::c_int);
+    }
+
+    #[test]
+    fn test_ioctl_tiocgpgrp() {
+        let expected_req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::GetProcGroup
+        };
+        let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse {
+            pid: 123
+        });
+
+        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let val = &mut (0 as libc::pid_t) as *mut libc::pid_t;
+
+        let res = ioctl_chan(
+            Arc::new(chan),
+            1,
+            libc::TIOCGPGRP,
+            val as *mut _ as *mut libc::c_void,
+        );
+
+        assert_eq!(res, 0);
+        assert_eq!(unsafe { *val }, 123 as libc::c_int);
+    }
+
+    #[test]
+    fn test_ioctl_tiocspgrp() {
+        let expected_req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: 123 })
+        };
+        let mock_res = PtySlaveResponse::Success(0);
+
+        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let val = &mut (123 as libc::pid_t) as *mut libc::pid_t;
+
+        let res = ioctl_chan(
+            Arc::new(chan),
+            1,
+            libc::TIOCSPGRP,
+            val as *mut _ as *mut libc::c_void,
+        );
+
+        assert_eq!(res, 0);
     }
 
     #[test]
