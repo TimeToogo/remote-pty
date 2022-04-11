@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use errno::set_errno;
 use remote_pty_common::proto::{
     slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
     Fd,
@@ -31,11 +32,17 @@ pub(crate) fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc
         Err(msg) => return generic_error("isatty", msg),
     };
 
-    match res {
+    let ret = match res {
         PtySlaveResponse::Success(ret) => ret as _,
         PtySlaveResponse::Error(err) => tc_error("isatty", err),
         _ => generic_error("isatty", "unexpected response"),
+    };
+
+    if ret == 0 {
+        set_errno(errno::Errno(libc::ENOTTY));
     }
+
+    ret
 }
 
 #[cfg(test)]
@@ -61,5 +68,18 @@ mod tests {
         let res = isatty_chan(Arc::new(chan), 1);
 
         assert_eq!(res, 1);
+    }
+
+    #[test]
+    fn test_isatty_false() {
+        let expected_req = PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::IsATty };
+        let mock_res = PtySlaveResponse::Success(0);
+
+        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+
+        let res = isatty_chan(Arc::new(chan), 1);
+
+        assert_eq!(res, 0);
+        assert_eq!(errno::errno().0, libc::ENOTTY);
     }
 }

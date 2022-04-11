@@ -71,6 +71,7 @@ name = "remote-pty-master"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "errno",
  "libc",
  "remote-pty-common",
 ]
