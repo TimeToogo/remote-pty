@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall},
     Fd, Termios,
 };
 
@@ -74,11 +74,13 @@ pub(crate) fn tcsetattr_chan(
     };
 
     // send tcsetattr request to remote
-    let req = PtySlaveCall::SetAttr(TcSetAttrCall {
+    let req = PtySlaveCall {
         fd: Fd(fd),
-        optional_actions,
-        termios,
-    });
+        typ: PtySlaveCallType::SetAttr(TcSetAttrCall {
+            optional_actions,
+            termios,
+        }),
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -97,7 +99,9 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall},
+        slave::{
+            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall,
+        },
         Fd, Termios,
     };
 
@@ -118,11 +122,13 @@ mod tests {
             c_ispeed: 6,
             c_ospeed: 7,
         };
-        let expected_req = PtySlaveCall::SetAttr(TcSetAttrCall {
+        let expected_req = PtySlaveCall {
             fd: Fd(1),
-            optional_actions: TcSetAttrActions::TCSANOW,
-            termios: mock_termios.clone(),
-        });
+            typ: PtySlaveCallType::SetAttr(TcSetAttrCall {
+                optional_actions: TcSetAttrActions::TCSANOW,
+                termios: mock_termios.clone(),
+            }),
+        };
         let mock_res = PtySlaveResponse::Success(0);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

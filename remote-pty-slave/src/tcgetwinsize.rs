@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcGetWinSizeCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
     Fd,
 };
 
@@ -14,7 +14,10 @@ use crate::{
 // non-standard but equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
 // @see https://fossies.org/dox/musl-1.2.2/tcgetwinsize_8c_source.html
 #[no_mangle]
-pub extern "C" fn intercept_tcgetwinsize(fd: libc::c_int, winsize: *mut libc::winsize) -> libc::c_int {
+pub extern "C" fn intercept_tcgetwinsize(
+    fd: libc::c_int,
+    winsize: *mut libc::winsize,
+) -> libc::c_int {
     handle_intercept(
         "tcgetwinsize",
         fd,
@@ -23,10 +26,16 @@ pub extern "C" fn intercept_tcgetwinsize(fd: libc::c_int, winsize: *mut libc::wi
     )
 }
 
-pub(crate) fn tcgetwinsize_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, winsize: *mut libc::winsize) -> libc::c_int
-{
+pub(crate) fn tcgetwinsize_chan(
+    chan: Arc<dyn RemoteChannel>,
+    fd: libc::c_int,
+    winsize: *mut libc::winsize,
+) -> libc::c_int {
     // send tcgetwinsize request to remote
-    let req = PtySlaveCall::GetWinSize(TcGetWinSizeCall { fd: Fd(fd) });
+    let req = PtySlaveCall {
+        fd: Fd(fd),
+        typ: PtySlaveCallType::GetWinSize,
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -55,7 +64,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcGetWinSizeCall, TcGetWinSizeResponse},
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetWinSizeResponse},
         Fd, WinSize,
     };
 
@@ -65,7 +74,10 @@ mod tests {
 
     #[test]
     fn test_tcgetwinsize() {
-        let expected_req = PtySlaveCall::GetWinSize(TcGetWinSizeCall { fd: Fd(1) });
+        let expected_req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::GetWinSize,
+        };
         let mock_winsize = WinSize {
             ws_col: 300,
             ws_row: 80,
@@ -74,7 +86,7 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::GetWinSize(TcGetWinSizeResponse {
             ret: 0,
-            winsize: mock_winsize
+            winsize: mock_winsize,
         });
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use remote_pty_common::{
     proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcDrainCall},
+        slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
         Fd,
     },
 };
@@ -26,7 +26,7 @@ pub extern "C" fn intercept_tcdrain(fd: libc::c_int) -> libc::c_int {
 pub(crate) fn tcdrain_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int
 {
     // send tcdrain request to remote
-    let req = PtySlaveCall::Drain(TcDrainCall { fd: Fd(fd) });
+    let req = PtySlaveCall { fd: Fd(fd), typ: PtySlaveCallType::Drain };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -45,7 +45,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcDrainCall},
+        slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
         Fd,
     };
 
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn test_tcdrain() {
-        let expected_req = PtySlaveCall::Drain(TcDrainCall { fd: Fd(1) });
+        let expected_req = PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::Drain };
         let mock_res = PtySlaveResponse::Success(1);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

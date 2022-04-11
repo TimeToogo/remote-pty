@@ -49,7 +49,7 @@ impl RemoteChannel for MockChannel {
 #[cfg(test)]
 mod tests {
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall},
+        slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
         Fd,
     };
 
@@ -60,11 +60,11 @@ mod tests {
     #[test]
     fn test_mock_channel() {
         let chan = MockChannel::new(
-            vec![PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) })],
+            vec![PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::GetAttr }],
             vec![PtySlaveResponse::Success(1)],
         );
 
-        let res = chan.send(PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) })).unwrap();
+        let res = chan.send(PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::GetAttr }).unwrap();
 
         assert_eq!(res, PtySlaveResponse::Success(1));
     }

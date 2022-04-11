@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{IsATtyCall, PtySlaveCall, PtySlaveResponse},
+    slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
     Fd,
 };
 
@@ -24,7 +24,7 @@ pub extern "C" fn intercept_isatty(fd: libc::c_int) -> libc::c_int {
 
 pub(crate) fn isatty_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int) -> libc::c_int {
     // send isatty request to remote
-    let req = PtySlaveCall::IsATty(IsATtyCall { fd: Fd(fd) });
+    let req = PtySlaveCall { fd: Fd(fd), typ: PtySlaveCallType::IsATty };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -43,7 +43,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{IsATtyCall, PtySlaveCall, PtySlaveResponse},
+        slave::{PtySlaveCall, PtySlaveResponse, PtySlaveCallType},
         Fd,
     };
 
@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_isatty() {
-        let expected_req = PtySlaveCall::IsATty(IsATtyCall { fd: Fd(1) });
+        let expected_req = PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::IsATty };
         let mock_res = PtySlaveResponse::Success(1);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

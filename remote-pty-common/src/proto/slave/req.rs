@@ -4,29 +4,32 @@ use crate::proto::{Fd, Termios, WinSize};
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub enum PtySlaveCall {
-    GetAttr(TcGetAttrCall),
+pub struct PtySlaveCall {
+    pub fd: Fd,
+    pub typ: PtySlaveCallType,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum PtySlaveCallType {
+    // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
+    GetAttr,
     SetAttr(TcSetAttrCall),
-    Drain(TcDrainCall),
+    // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcdrain.html
+    Drain,
     Flow(TcFlowCall),
     Flush(TcFlushCall),
     SendBreak(TcSendBreakCall),
-    IsATty(IsATtyCall),
-    GetWinSize(TcGetWinSizeCall),
+    // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/isatty.html
+    IsATty,
+    // equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
+    GetWinSize,
     SetWinSize(TcSetWinSizeCall),
     Ioctl(IoctlCall)
-}
-
-// @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
-#[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct TcGetAttrCall {
-    pub fd: Fd,
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcSetAttrCall {
-    pub fd: Fd,
     pub optional_actions: TcSetAttrActions,
     pub termios: Termios,
 }
@@ -38,16 +41,9 @@ pub enum TcSetAttrActions {
     TCSAFLUSH,
 }
 
-// @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcdrain.html
-#[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct TcDrainCall {
-    pub fd: Fd,
-}
-
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcflow.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcFlowCall {
-    pub fd: Fd,
     pub action: TcFlowAction,
 }
 
@@ -62,7 +58,6 @@ pub enum TcFlowAction {
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcflush.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcFlushCall {
-    pub fd: Fd,
     pub queue_selector: TcFlushQueueSelector,
 }
 
@@ -76,38 +71,17 @@ pub enum TcFlushQueueSelector {
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsendbreak.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcSendBreakCall {
-    pub fd: Fd,
     pub duration: u32,
-}
-
-// @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/isatty.html
-#[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct IsATtyCall {
-    pub fd: Fd,
-}
-
-// equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
-#[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct TcGetWinSizeCall {
-    pub fd: Fd,
 }
 
 // equivalent to ioctl(fd, TIOCSWINSZ, *winsize)
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct TcSetWinSizeCall {
-    pub fd: Fd,
     pub winsize: WinSize
 }
 
-
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct IoctlCall {
-    pub fd: Fd,
-    pub cmd: IoctlCmd
-}
-
-#[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub enum IoctlCmd {
+pub enum IoctlCall {
     FIONREAD,
     TIOCOUTQ,
     TIOCGETD,
@@ -116,12 +90,12 @@ pub enum IoctlCmd {
 
 #[cfg(test)]
 mod tests {
-    use crate::proto::{slave::{PtySlaveCall, TcGetAttrCall}, Fd};
+    use crate::proto::{slave::{PtySlaveCall, PtySlaveCallType}, Fd};
 
     #[test]
     fn encode_decode() {
         let config = bincode::config::standard();
-        let get_attr_call = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) });
+        let get_attr_call = PtySlaveCall { fd: Fd(1), typ: PtySlaveCallType::GetAttr};
 
         assert_eq!(
             get_attr_call,

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcFlowAction, TcFlowCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlowAction, TcFlowCall},
     Fd,
 };
 
@@ -22,7 +22,11 @@ pub extern "C" fn intercept_tcflow(fd: libc::c_int, action: libc::c_int) -> libc
     )
 }
 
-pub(crate) fn tcflow_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+pub(crate) fn tcflow_chan(
+    chan: Arc<dyn RemoteChannel>,
+    fd: libc::c_int,
+    action: libc::c_int,
+) -> libc::c_int {
     let action = match action {
         libc::TCOON => TcFlowAction::TCOON,
         libc::TCOOFF => TcFlowAction::TCOOFF,
@@ -32,7 +36,10 @@ pub(crate) fn tcflow_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, action:
     };
 
     // send tcflow request to remote
-    let req = PtySlaveCall::Flow(TcFlowCall { fd: Fd(fd), action });
+    let req = PtySlaveCall {
+        fd: Fd(fd),
+        typ: PtySlaveCallType::Flow(TcFlowCall { action }),
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -51,7 +58,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcFlowAction, TcFlowCall},
+        slave::{PtySlaveCall, PtySlaveResponse, TcFlowAction, TcFlowCall, PtySlaveCallType},
         Fd,
     };
 
@@ -61,10 +68,12 @@ mod tests {
 
     #[test]
     fn test_tcflow() {
-        let expected_req = PtySlaveCall::Flow(TcFlowCall {
+        let expected_req = PtySlaveCall {
             fd: Fd(1),
-            action: TcFlowAction::TCION,
-        });
+            typ: PtySlaveCallType::Flow(TcFlowCall {
+                action: TcFlowAction::TCION,
+            }),
+        };
         let mock_res = PtySlaveResponse::Success(1);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

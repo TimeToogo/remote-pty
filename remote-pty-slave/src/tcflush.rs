@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector},
     Fd,
 };
 
@@ -40,10 +40,10 @@ pub(crate) fn tcflush_chan(
     };
 
     // send tcflush request to remote
-    let req = PtySlaveCall::Flush(TcFlushCall {
+    let req = PtySlaveCall {
         fd: Fd(fd),
-        queue_selector,
-    });
+        typ: PtySlaveCallType::Flush(TcFlushCall { queue_selector }),
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -72,10 +72,12 @@ mod tests {
 
     #[test]
     fn test_tcflush() {
-        let expected_req = PtySlaveCall::Flush(TcFlushCall {
+        let expected_req = PtySlaveCall {
             fd: Fd(1),
-            queue_selector: TcFlushQueueSelector::TCIOFLUSH,
-        });
+            typ: remote_pty_common::proto::slave::PtySlaveCallType::Flush(TcFlushCall {
+                queue_selector: TcFlushQueueSelector::TCIOFLUSH,
+            }),
+        };
         let mock_res = PtySlaveResponse::Success(0);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

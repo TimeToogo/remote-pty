@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcSetWinSizeCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetWinSizeCall},
     Fd, WinSize,
 };
 
@@ -41,10 +41,12 @@ pub(crate) fn tcsetwinsize_chan(
     };
 
     // send tcsetwinsize request to remote
-    let req = PtySlaveCall::SetWinSize(TcSetWinSizeCall {
+    let req = PtySlaveCall {
         fd: Fd(fd),
-        winsize: remote_winsize
-    });
+        typ: PtySlaveCallType::SetWinSize(TcSetWinSizeCall {
+            winsize: remote_winsize,
+        }),
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -63,7 +65,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcSetWinSizeCall},
+        slave::{PtySlaveCall, PtySlaveResponse, TcSetWinSizeCall, PtySlaveCallType},
         Fd, WinSize,
     };
 
@@ -77,10 +79,12 @@ mod tests {
             ws_xpixel: 1,
             ws_ypixel: 2,
         };
-        let expected_req = PtySlaveCall::SetWinSize(TcSetWinSizeCall {
+        let expected_req = PtySlaveCall {
             fd: Fd(1),
-            winsize: mock_winsize
-        });
+            typ: PtySlaveCallType::SetWinSize(TcSetWinSizeCall {
+                winsize: mock_winsize,
+            }),
+        };
         let mock_res = PtySlaveResponse::Success(0);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
@@ -92,11 +96,7 @@ mod tests {
             ws_ypixel: 2,
         };
 
-        let res = tcsetwinsize_chan(
-            Arc::new(chan),
-            1,
-            &mut winsize as *mut libc::winsize,
-        );
+        let res = tcsetwinsize_chan(Arc::new(chan), 1, &mut winsize as *mut libc::winsize);
 
         assert_eq!(res, 0);
     }

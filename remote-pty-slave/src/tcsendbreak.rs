@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcSendBreakCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSendBreakCall},
     Fd,
 };
 
@@ -22,12 +22,18 @@ pub extern "C" fn intercept_tcsendbreak(fd: libc::c_int, duration: libc::c_int) 
     )
 }
 
-pub(crate) fn tcsendbreak_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, duration: libc::c_int) -> libc::c_int {
+pub(crate) fn tcsendbreak_chan(
+    chan: Arc<dyn RemoteChannel>,
+    fd: libc::c_int,
+    duration: libc::c_int,
+) -> libc::c_int {
     // send tcsendbreak request to remote
-    let req = PtySlaveCall::SendBreak(TcSendBreakCall {
+    let req = PtySlaveCall {
         fd: Fd(fd),
-        duration: duration as _
-    });
+        typ: PtySlaveCallType::SendBreak(TcSendBreakCall {
+            duration: duration as _,
+        }),
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -46,7 +52,7 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcSendBreakCall},
+        slave::{PtySlaveCall, PtySlaveResponse, TcSendBreakCall, PtySlaveCallType},
         Fd,
     };
 
@@ -56,10 +62,10 @@ mod tests {
 
     #[test]
     fn test_tcsendbreak() {
-        let expected_req = PtySlaveCall::SendBreak(TcSendBreakCall {
+        let expected_req = PtySlaveCall {
             fd: Fd(1),
-            duration: 10
-        });
+            typ: PtySlaveCallType::SendBreak(TcSendBreakCall { duration: 10 }),
+        };
         let mock_res = PtySlaveResponse::Success(0);
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);

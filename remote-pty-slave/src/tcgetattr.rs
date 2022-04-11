@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall},
+    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
     Fd,
 };
 
@@ -22,10 +22,16 @@ pub extern "C" fn intercept_tcgetattr(fd: libc::c_int, term: *mut libc::termios)
     )
 }
 
-pub(crate) fn tcgetattr_chan(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, term: *mut libc::termios) -> libc::c_int
-{
+pub(crate) fn tcgetattr_chan(
+    chan: Arc<dyn RemoteChannel>,
+    fd: libc::c_int,
+    term: *mut libc::termios,
+) -> libc::c_int {
     // send tcgetattr request to remote
-    let req = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(fd) });
+    let req = PtySlaveCall {
+        fd: Fd(fd),
+        typ: PtySlaveCallType::GetAttr,
+    };
 
     let res = match chan.send(req) {
         Ok(res) => res,
@@ -72,7 +78,9 @@ mod tests {
     use std::sync::Arc;
 
     use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcGetAttrCall, TcGetAttrResponse},
+        slave::{
+            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetAttrResponse,
+        },
         Fd, Termios,
     };
 
@@ -82,7 +90,10 @@ mod tests {
 
     #[test]
     fn test_tcgetattr() {
-        let expected_req = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) });
+        let expected_req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::GetAttr,
+        };
         let mock_termios = Termios {
             c_iflag: 1,
             c_oflag: 2,

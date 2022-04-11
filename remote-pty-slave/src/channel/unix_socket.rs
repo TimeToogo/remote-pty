@@ -1,8 +1,4 @@
-use std::{
-    os::unix::net::UnixStream,
-    result::Result,
-    sync::{Mutex}, ops::DerefMut,
-};
+use std::{ops::DerefMut, os::unix::net::UnixStream, result::Result, sync::Mutex};
 
 use remote_pty_common::proto::slave::{PtySlaveCall, PtySlaveResponse};
 
@@ -17,7 +13,9 @@ pub struct UnixSocketChannel {
 
 impl RemoteChannel for UnixSocketChannel {
     fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, &'static str> {
-        let mut sock = self.socket.lock()
+        let mut sock = self
+            .socket
+            .lock()
             .map_err(|_| "failed to lock sock mutex")?;
 
         let enc_conf = bincode::config::standard();
@@ -32,27 +30,33 @@ impl RemoteChannel for UnixSocketChannel {
 }
 
 pub fn init_socket_channel(conf: &Conf) -> Result<UnixSocketChannel, &'static str> {
-    let sock = UnixStream::connect(&conf.sock_path).map_err(|_| "failed to connect to unix socket")?;
+    let sock =
+        UnixStream::connect(&conf.sock_path).map_err(|_| "failed to connect to unix socket")?;
 
     Ok(UnixSocketChannel {
         socket: Mutex::new(sock),
     })
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::{os::unix::net::UnixListener, thread, io::Write};
+    use std::{io::Write, os::unix::net::UnixListener, thread};
 
-    use remote_pty_common::proto::{slave::{PtySlaveCall, TcGetAttrCall, PtySlaveResponse}, Fd};
+    use remote_pty_common::proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+        Fd,
+    };
 
-    use crate::{channel::{RemoteChannel, unix_socket::init_socket_channel}, conf::Conf};
+    use crate::{
+        channel::{unix_socket::init_socket_channel, RemoteChannel},
+        conf::Conf,
+    };
 
     #[test]
     fn test_init_invalid_path() {
         let res = init_socket_channel(&Conf {
             sock_path: "/this/is/not/valid".to_string(),
-            fds: vec![]
+            fds: vec![],
         });
 
         assert!(res.is_err());
@@ -63,7 +67,10 @@ mod tests {
         let sock_path = "/tmp/remote-pty-test-1.sock";
         let _ = std::fs::remove_file(sock_path);
         let _temp_sock = UnixListener::bind(sock_path).unwrap();
-        let res = init_socket_channel(&Conf { sock_path: sock_path.to_string(), fds: vec![] });
+        let res = init_socket_channel(&Conf {
+            sock_path: sock_path.to_string(),
+            fds: vec![],
+        });
 
         assert!(res.is_ok());
     }
@@ -74,9 +81,16 @@ mod tests {
         let _ = std::fs::remove_file(sock_path);
 
         let temp_sock = UnixListener::bind(sock_path).unwrap();
-        let chan = init_socket_channel(&Conf { sock_path: sock_path.to_string(), fds: vec![] }).unwrap();
+        let chan = init_socket_channel(&Conf {
+            sock_path: sock_path.to_string(),
+            fds: vec![],
+        })
+        .unwrap();
 
-        let req = PtySlaveCall::GetAttr(TcGetAttrCall { fd: Fd(1) });
+        let req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::GetAttr,
+        };
         let res = PtySlaveResponse::Success(0);
 
         // accept connection and send reply in another thread
@@ -86,7 +100,8 @@ mod tests {
             let (mut sock, _) = temp_sock.accept().unwrap();
             let enc_conf = bincode::config::standard();
 
-            let recv_req: PtySlaveCall = bincode::decode_from_std_read(&mut sock, enc_conf).unwrap();
+            let recv_req: PtySlaveCall =
+                bincode::decode_from_std_read(&mut sock, enc_conf).unwrap();
             assert_eq!(recv_req, req_copy);
 
             let buf = bincode::encode_to_vec(res_copy, enc_conf).unwrap();

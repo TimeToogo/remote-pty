@@ -17,7 +17,6 @@ where
     R: From<i32>,
     F1: FnOnce(Arc<dyn RemoteChannel>) -> R,
     F2: FnOnce() -> R,
-    // F3: FnOnce() -> R,
 {
     debug(format!("intercepted {}", func_name));
 
