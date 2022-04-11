@@ -14,7 +14,7 @@ use self::unix_socket::{init_socket_channel, UnixSocketChannel};
 // an RPC channel for sending the pty calls to the
 // slave side on the remote
 pub trait RemoteChannel {
-    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, &'static str>;
+    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, String>;
 }
 
 type ChannelType = UnixSocketChannel;
@@ -23,7 +23,7 @@ lazy_static! {
     static ref GLOBAL_CHANNEL: Mutex<Option<Arc<ChannelType>>> = Mutex::new(Option::None);
 }
 
-pub fn get_remote_channel(conf: &Conf) -> Result<Arc<dyn RemoteChannel>, &'static str> {
+pub fn get_remote_channel(conf: &Conf) -> Result<Arc<dyn RemoteChannel>, String> {
     let mut sock = GLOBAL_CHANNEL
         .lock()
         .map_err(|_| "failed to lock channel mutex")?;

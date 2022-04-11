@@ -12,7 +12,7 @@ pub struct UnixSocketChannel {
 }
 
 impl RemoteChannel for UnixSocketChannel {
-    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, &'static str> {
+    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, String> {
         let mut sock = self
             .socket
             .lock()
@@ -20,16 +20,16 @@ impl RemoteChannel for UnixSocketChannel {
 
         let enc_conf = bincode::config::standard();
         bincode::encode_into_std_write(call, sock.deref_mut(), enc_conf)
-            .map_err(|_| "failed to write pty call to socket")?;
+            .map_err(|err| format!("failed to write pty call to socket: {:?}", err))?;
 
         let response = bincode::decode_from_std_read(sock.deref_mut(), enc_conf)
-            .map_err(|_| "failed to read pty response from sock")?;
+            .map_err(|err| format!("failed to read pty response from sock: {:?}", err))?;
 
         Ok(response)
     }
 }
 
-pub fn init_socket_channel(conf: &Conf) -> Result<UnixSocketChannel, &'static str> {
+pub fn init_socket_channel(conf: &Conf) -> Result<UnixSocketChannel, String> {
     let sock =
         UnixStream::connect(&conf.sock_path).map_err(|_| "failed to connect to unix socket")?;
 

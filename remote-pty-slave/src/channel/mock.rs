@@ -37,7 +37,7 @@ impl MockChannel {
 }
 
 impl RemoteChannel for MockChannel {
-    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, &'static str> {
+    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, String> {
         let mut data = self.data.lock().unwrap();
 
         assert_eq!(call, data.requests.pop().unwrap());
