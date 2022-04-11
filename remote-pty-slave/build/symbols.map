@@ -21,4 +21,6 @@ intercept_tcsetattr tcsetattr
 tcsetwinsize __libc__tcsetwinsize
 intercept_tcsetwinsize tcsetwinsize
 tcgetpgrp __libc__tcgetpgrp
+intercept_tcgetpgrp tcgetpgrp
+tcsetpgrp __libc__tcsetpgrp
 intercept_tcsetpgrp tcsetpgrp
