@@ -1,4 +1,4 @@
-use remote_pty_common::proto::slave::{PtySlaveResponse, SetProcGroupCall};
+use remote_pty_common::{proto::slave::{PtySlaveResponse, SetProcGroupCall}, log::debug};
 
 use crate::context::Context;
 
@@ -7,6 +7,7 @@ pub fn handle_tcsetpgrp(ctx: &Context, req: SetProcGroupCall) -> PtySlaveRespons
     let mut state = ctx.state.lock().expect("failed to lock terminal state");
     (*state).pgrp = req.pid as _;
 
+    debug(format!("set pgrp to {}", req.pid));
     PtySlaveResponse::Success(0)
 }
 

@@ -1,6 +1,6 @@
-use remote_pty_common::proto::{
+use remote_pty_common::{proto::{
     slave::{PtySlaveResponse, ProcGroupResponse},
-};
+}, log::debug};
 
 use crate::context::Context;
 
@@ -8,6 +8,7 @@ use crate::context::Context;
 pub fn handle_tcgetpgrp(ctx: &Context) -> PtySlaveResponse {
     let state = ctx.state.lock().expect("failed to lock terminal state");
 
+    debug(format!("returned current pgrp {}", (*state).pgrp));
     PtySlaveResponse::GetProcGroup(ProcGroupResponse {
         pid: (*state).pgrp as _
     })
