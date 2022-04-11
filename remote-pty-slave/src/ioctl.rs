@@ -94,7 +94,9 @@ fn ioctl_chan(
         _ if cmd == libc::TIOCSCTTY as _ => cmd_unimplemented("TIOCSCTTY"),
         _ if cmd == libc::TIOCNOTTY as _ => cmd_unimplemented("TIOCNOTTY"),
         _ if cmd == libc::TIOCGPGRP as _ => cmd_unimplemented("TIOCGPGRP"),
-        _ if cmd == libc::TIOCSPGRP as _ => cmd_unimplemented("TIOCSPGRP"),
+        // we fake the success of changing terminal process groups
+        // since our remote terminal doesn't see these as individual procs
+        _ if cmd == libc::TIOCSPGRP as _ => return 0,
         _ if cmd == libc::TIOCEXCL as _ => cmd_unimplemented("TIOCEXCL"),
         _ if cmd == libc::TIOCNXCL as _ => cmd_unimplemented("TIOCNXCL"),
         _ if cmd == libc::TIOCGETD as _ => ioctl_get_int(chan, fd, IoctlCall::TIOCGETD, arg),

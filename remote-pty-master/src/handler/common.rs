@@ -5,7 +5,8 @@ use remote_pty_common::{
 
 use crate::context::Context;
 
-pub fn handle_error(_ctx: Context) -> PtySlaveResponse {
+// handle libc errno results and convert to response messages
+pub fn handle_error(_ctx: &Context) -> PtySlaveResponse {
     let err = match errno::errno().0 as _ {
         libc::EINVAL => TcError::EINVAL,
         libc::EBADF => TcError::EBADF,

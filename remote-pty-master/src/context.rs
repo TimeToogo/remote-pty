@@ -1,7 +1,11 @@
+use std::io::{self, Result};
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Context {
     pub pty: PtyPair,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct PtyPair {
     pub master: PtyFd,
     pub slave: PtyFd,
@@ -9,15 +13,14 @@ pub struct PtyPair {
 
 pub type PtyFd = libc::c_int;
 
-#[cfg(test)]
 impl Context {
     pub fn from_pair(master: PtyFd, slave: PtyFd) -> Self {
-        return Self {
+        Self {
             pty: PtyPair { master, slave },
-        };
+        }
     }
 
-    pub fn valid_pty_pair() -> Self {
+    pub fn openpty() -> Result<Self> {
         use std::ptr;
 
         let (master, slave) = unsafe {
@@ -34,14 +37,19 @@ impl Context {
                 nullptr as *mut _,
             );
 
-            assert!(ret == 0);
+            if ret != 0 {
+                return Err(io::Error::last_os_error());
+            }
 
             (master, slave)
         };
 
-        Self::from_pair(master, slave)
+        Ok(Self::from_pair(master, slave))
     }
+}
 
+#[cfg(test)]
+impl Context {
     pub fn not_pty_fds() -> Self {
         use std::ffi::CString;
 

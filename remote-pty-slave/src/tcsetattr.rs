@@ -44,34 +44,7 @@ pub(crate) fn tcsetattr_chan(
         }
     };
 
-    let termios = unsafe {
-        #[allow(unused_mut, unused_assignments)]
-        let mut c_line = 0;
-        #[cfg(target_os = "linux")]
-        {
-            c_line = (*term).c_line as _;
-        }
-
-        let mut c_cc = (*term).c_cc.to_vec();
-        c_cc.resize(32, 0);
-
-        Termios {
-            c_iflag: (*term).c_iflag as _,
-            c_oflag: (*term).c_oflag as _,
-            c_cflag: (*term).c_cflag as _,
-            c_lflag: (*term).c_lflag as _,
-            c_line,
-            c_cc: c_cc.try_into().expect("invalid cc length"),
-            #[cfg(any(target_env = "gnu", target_os = "macos"))]
-            c_ispeed: (*term).c_ispeed as _,
-            #[cfg(any(target_env = "gnu", target_os = "macos"))]
-            c_ospeed: (*term).c_ospeed as _,
-            #[cfg(target_env = "musl")]
-            c_ispeed: (*term).__c_ispeed as _,
-            #[cfg(target_env = "musl")]
-            c_ospeed: (*term).__c_ospeed as _,
-        }
-    };
+    let termios = unsafe { Termios::from_libc_termios(term.as_ref().unwrap()) };
 
     // send tcsetattr request to remote
     let req = PtySlaveCall {

@@ -64,6 +64,7 @@ name = "remote-pty-common"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "libc",
 ]
 
 [[package]]
