@@ -40,7 +40,7 @@ impl RemotePtyServer {
             PtySlaveCallType::SetWinSize(req) => handle_tcsetwinsize(ctx, req),
             PtySlaveCallType::Ioctl(_) => todo!(),
             PtySlaveCallType::GetProcGroup => handle_tcgetpgrp(ctx),
-            PtySlaveCallType::SetProgGroup(_) => todo!(),
+            PtySlaveCallType::SetProgGroup(req) => handle_tcsetpgrp(ctx, req),
         };
 
         debug(format!("response: {:?}", res));

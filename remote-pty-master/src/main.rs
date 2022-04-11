@@ -11,6 +11,11 @@ use remote_pty_master::{context::Context, handler::RemotePtyServer};
 // this is designed to be invoked by a shell and controlling terminal
 // and it will use the stdin pty as the remote pty controlled by the
 // remote slave
+//
+// run master
+// REMOTE_PTY_DEBUG=1 cargo run --target x86_64-unknown-linux-musl -- /tmp/pty.sock /tmp/stdin.sock /tmp/stdout.sock
+// run slave
+// nc -U /tmp/stdin.sock | REMOTE_PTY_DEBUG=1 REMOTE_PTY_SOCK_PATH=/tmp/pty.sock REMOTE_PTY_FDS=0,1,2 ./bash-linux-x86_64 2>&1 | nc -U /tmp/stdout.sock
 fn main() {
     if unsafe { libc::isatty(libc::STDIN_FILENO) } != 1 {
         panic!("stdin is not a tty");
@@ -47,9 +52,10 @@ fn main() {
             }
 
             stdin_sock.write_all(&buf[..n])?;
+            stdin_sock.flush()?;
         }
 
-        Ok(())
+        panic!("stdin sock eof");
     });
 
     let writer = thread::spawn(move || -> Result<()> {
@@ -68,9 +74,10 @@ fn main() {
             }
 
             io::stdout().write_all(&buf[..n])?;
+            io::stdout().flush()?;
         }
 
-        Ok(())
+        panic!("stdout sock eof");
     });
 
     let pty_handler = thread::spawn(move || -> Result<()> {

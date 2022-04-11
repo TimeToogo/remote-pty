@@ -6,4 +6,6 @@ TODO:
 - [x] filter fds to those specified from env
 - [x] forward calls to libc/musl implementations if not in filtered fds
 - [ ] implement master/server handler for pty requests
-- [ ] SIGWINCH handling (requires listener on slave side)
+- [ ] consolidate stdin/out/err through remote PTY channel
+- [ ] SIGWINCH|SIK* handling (requires listener on slave side)
+- [ ] shared library mode for child processes
