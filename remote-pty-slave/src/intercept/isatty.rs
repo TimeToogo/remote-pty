@@ -9,7 +9,7 @@ use remote_pty_common::proto::{
 use crate::{
     channel::RemoteChannel,
     common::handle_intercept,
-    err::{generic_error, tc_error},
+    error::{generic_error, tc_error},
 };
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/isatty.html

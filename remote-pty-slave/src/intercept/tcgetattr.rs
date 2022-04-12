@@ -8,7 +8,7 @@ use remote_pty_common::proto::{
 use crate::{
     channel::RemoteChannel,
     common::handle_intercept,
-    err::{generic_error, tc_error},
+    error::{generic_error, tc_error},
 };
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetattr.html
@@ -47,7 +47,7 @@ pub(crate) fn tcgetattr_chan(
     res.termios
         .copy_to_libc_termios(unsafe { term.as_mut().unwrap() });
 
-    return res.ret as _;
+    res.ret as _
 }
 
 #[cfg(test)]

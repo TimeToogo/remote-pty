@@ -38,7 +38,7 @@ fn main() {
 
     let reader = thread::spawn(move || -> Result<()> {
         let mut stdin_sock = UnixListener::bind(&stdin_sock)
-            .expect(format!("could not bind stdin unix socket: {}", stdin_sock).as_str())
+            .unwrap_or_else(|_| panic!("could not bind stdin unix socket: {}", stdin_sock))
             .accept()
             .unwrap()
             .0;
@@ -60,7 +60,7 @@ fn main() {
 
     let writer = thread::spawn(move || -> Result<()> {
         let mut stdout_sock = UnixListener::bind(&stdout_sock)
-            .expect(format!("could not bind stdout unix socket: {}", stdout_sock).as_str())
+            .unwrap_or_else(|_| panic!("could not bind stdout unix socket: {}", stdout_sock))
             .accept()
             .unwrap()
             .0;
@@ -82,7 +82,7 @@ fn main() {
 
     let pty_handler = thread::spawn(move || -> Result<()> {
         let mut pty_sock = UnixListener::bind(&pty_sock)
-            .expect(format!("could not bind pty unix socket: {}", pty_sock).as_str())
+            .unwrap_or_else(|_| panic!("could not bind pty unix socket: {}", pty_sock))
             .accept()
             .unwrap()
             .0;

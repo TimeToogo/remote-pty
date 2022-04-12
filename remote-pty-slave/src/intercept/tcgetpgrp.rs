@@ -8,7 +8,7 @@ use remote_pty_common::proto::{
 use crate::{
     channel::RemoteChannel,
     common::handle_intercept,
-    err::{generic_error, tc_error},
+    error::{generic_error, tc_error},
 };
 
 // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html

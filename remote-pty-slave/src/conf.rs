@@ -16,7 +16,7 @@ impl Conf {
         Ok(Self {
             sock_path: env::var("REMOTE_PTY_SOCK_PATH").map_err(|_| "could not find env var REMOTE_PTY_SOCK_PATH")?,
             fds: env::var("REMOTE_PTY_FDS").map_err(|_| "could not find env var REMOTE_PTY_FDS")?
-                .split(",")
+                .split(',')
                 .map(|i| i.parse::<u16>())
                 .collect::<Result<Vec<u16>, ParseIntError>>()
                 .map_err(|_| "failed to parse numbers in REMOTE_PTY_FDS")?,

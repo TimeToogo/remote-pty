@@ -9,7 +9,7 @@ use remote_pty_common::{
 
 use crate::{
     channel::RemoteChannel,
-    err::{generic_error, tc_error}, common::handle_intercept,
+    error::{generic_error, tc_error}, common::handle_intercept,
 };
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcdrain.html

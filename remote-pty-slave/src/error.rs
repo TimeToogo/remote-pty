@@ -8,7 +8,7 @@ where
 {
     debug(format!("{}: {}", func_name.into(), err_msg.into()));
     set_errno(Errno(libc::EIO));
-    return -1;
+    -1
 }
 
 pub fn tc_error<S1>(func_name: S1, err: TcError) -> libc::c_int
@@ -25,5 +25,5 @@ where
         TcError::EIO => libc::EIO,
     }));
 
-    return -1;
+    -1
 }

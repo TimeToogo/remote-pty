@@ -27,12 +27,12 @@ impl MockChannel {
         expected_reqs.reverse();
         expected_resp.reverse();
 
-        return Self {
+        Self {
             data: Arc::new(Mutex::new(Data {
                 requests: expected_reqs,
                 responses: expected_resp,
             })),
-        };
+        }
     }
 }
 
@@ -42,7 +42,7 @@ impl RemoteChannel for MockChannel {
 
         assert_eq!(call, data.requests.pop().unwrap());
 
-        return Ok(data.responses.pop().unwrap());
+        Ok(data.responses.pop().unwrap())
     }
 }
 

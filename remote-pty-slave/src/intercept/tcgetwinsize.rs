@@ -8,7 +8,7 @@ use remote_pty_common::proto::{
 use crate::{
     channel::RemoteChannel,
     common::handle_intercept,
-    err::{generic_error, tc_error},
+    error::{generic_error, tc_error},
 };
 
 // non-standard but equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
@@ -56,7 +56,7 @@ pub(crate) fn tcgetwinsize_chan(
         (*winsize).ws_ypixel = remote_winsize.winsize.ws_ypixel;
     }
 
-    return remote_winsize.ret as _;
+    remote_winsize.ret as _
 }
 
 #[cfg(test)]

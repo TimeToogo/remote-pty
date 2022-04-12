@@ -50,5 +50,5 @@ where
     let res = remote_cb(chan);
     debug(format!("response: {:?}", res));
 
-    return res;
+    res
 }

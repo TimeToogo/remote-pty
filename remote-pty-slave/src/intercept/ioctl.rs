@@ -12,7 +12,7 @@ use remote_pty_common::{
     },
 };
 
-use crate::{channel::RemoteChannel, common::handle_intercept, err::generic_error};
+use crate::{channel::RemoteChannel, common::handle_intercept, error::generic_error, intercept};
 
 #[cfg(target_os = "linux")]
 type Cmd = libc::Ioctl;
@@ -47,23 +47,23 @@ fn ioctl_chan(
     // check linux specific cmd's
     #[cfg(target_os = "linux")]
     match cmd {
-        libc::TCGETS => return crate::tcgetattr_chan(chan, fd, arg as *mut libc::termios),
+        libc::TCGETS => return intercept::tcgetattr_chan(chan, fd, arg as *mut libc::termios),
         libc::TCSETS => {
-            return crate::tcsetattr_chan(chan, fd, libc::TCSANOW, arg as *mut libc::termios)
+            return intercept::tcsetattr_chan(chan, fd, libc::TCSANOW, arg as *mut libc::termios)
         }
         libc::TCSETSW => {
-            return crate::tcsetattr_chan(chan, fd, libc::TCSADRAIN, arg as *mut libc::termios)
+            return intercept::tcsetattr_chan(chan, fd, libc::TCSADRAIN, arg as *mut libc::termios)
         }
         libc::TCSETSF => {
-            return crate::tcsetattr_chan(chan, fd, libc::TCSAFLUSH, arg as *mut libc::termios)
+            return intercept::tcsetattr_chan(chan, fd, libc::TCSAFLUSH, arg as *mut libc::termios)
         }
         libc::TIOCGLCKTRMIOS => return cmd_unimplemented("TIOCGLCKTRMIOS"),
         libc::TIOCSLCKTRMIOS => return cmd_unimplemented("TIOCSLCKTRMIOS"),
-        libc::TCSBRK => return crate::tcsendbreak_chan(chan, fd, arg as libc::c_int),
-        libc::TCSBRKP => return crate::tcsendbreak_chan(chan, fd, arg as libc::c_int),
-        libc::TCXONC => return crate::tcflow_chan(chan, fd, arg as libc::c_int),
+        libc::TCSBRK => return intercept::tcsendbreak_chan(chan, fd, arg as libc::c_int),
+        libc::TCSBRKP => return intercept::tcsendbreak_chan(chan, fd, arg as libc::c_int),
+        libc::TCXONC => return intercept::tcflow_chan(chan, fd, arg as libc::c_int),
         libc::TIOCINQ => return ioctl_get_int(chan, fd, IoctlCall::FIONREAD, arg), // same as libc::FIONREAD
-        libc::TCFLSH => return crate::tcflush_chan(chan, fd, arg as libc::c_int),
+        libc::TCFLSH => return intercept::tcflush_chan(chan, fd, arg as libc::c_int),
         libc::TIOCGSID => return cmd_unimplemented("TIOCGSID"),
         libc::TIOCGEXCL => return cmd_unimplemented("TIOCGEXCL"),
         libc::TIOCGPKT => return cmd_unimplemented("TIOCGPKT"),
@@ -80,10 +80,10 @@ fn ioctl_chan(
 
     match cmd {
         _ if cmd == libc::TIOCGWINSZ as _ => {
-            crate::tcgetwinsize_chan(chan, fd, arg as *mut libc::winsize)
+            intercept::tcgetwinsize_chan(chan, fd, arg as *mut libc::winsize)
         }
         _ if cmd == libc::TIOCSWINSZ as _ => {
-            crate::tcsetwinsize_chan(chan, fd, arg as *mut libc::winsize)
+            intercept::tcsetwinsize_chan(chan, fd, arg as *mut libc::winsize)
         }
         _ if cmd == libc::TIOCSBRK as _ => cmd_unimplemented("TIOCSBRK"),
         _ if cmd == libc::TIOCCBRK as _ => cmd_unimplemented("TIOCCBRK"),
@@ -94,10 +94,12 @@ fn ioctl_chan(
         _ if cmd == libc::TIOCSCTTY as _ => cmd_unimplemented("TIOCSCTTY"),
         _ if cmd == libc::TIOCNOTTY as _ => cmd_unimplemented("TIOCNOTTY"),
         _ if cmd == libc::TIOCGPGRP as _ => unsafe {
-            *(arg as *mut _) = crate::tcgetpgrp_chan(chan, fd);
-            return 0;
+            *(arg as *mut _) = intercept::tcgetpgrp_chan(chan, fd);
+            0
         },
-        _ if cmd == libc::TIOCSPGRP as _ => crate::tcsetpgrp_chan(chan, fd, unsafe { *(arg as *mut libc::pid_t) }),
+        _ if cmd == libc::TIOCSPGRP as _ => {
+            intercept::tcsetpgrp_chan(chan, fd, unsafe { *(arg as *mut libc::pid_t) })
+        }
         _ if cmd == libc::TIOCEXCL as _ => cmd_unimplemented("TIOCEXCL"),
         _ if cmd == libc::TIOCNXCL as _ => cmd_unimplemented("TIOCNXCL"),
         _ if cmd == libc::TIOCGETD as _ => ioctl_get_int(chan, fd, IoctlCall::TIOCGETD, arg),
@@ -147,7 +149,7 @@ fn ioctl_get_int(
         (*(arg as *mut libc::c_int)) = val as _;
     }
 
-    return ret as _;
+    ret as _
 }
 
 fn ioctl_set_int(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, cmd: IoctlCall) -> libc::c_int {
@@ -171,7 +173,7 @@ fn ioctl_set_int(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, cmd: IoctlCall) 
 fn cmd_unimplemented(name: &str) -> libc::c_int {
     debug(format!("unimplemented ioctl {}", name));
     set_errno(Errno(libc::EINVAL));
-    return -1;
+    -1
 }
 
 #[cfg(test)]
@@ -180,13 +182,14 @@ mod tests {
 
     use remote_pty_common::proto::{
         slave::{
-            IoctlCall, IoctlResponse, IoctlValueResponse, PtySlaveCall, PtySlaveCallType,
-            PtySlaveResponse, ProcGroupResponse, SetProcGroupCall,
+            IoctlCall, IoctlResponse, IoctlValueResponse, ProcGroupResponse, PtySlaveCall,
+            PtySlaveCallType, PtySlaveResponse, SetProcGroupCall,
         },
         Fd,
     };
 
-    use crate::{channel::mock::MockChannel, ioctl::ioctl_chan};
+    use super::ioctl_chan;
+    use crate::channel::mock::MockChannel;
 
     #[test]
     fn test_unimplemented() {
@@ -292,11 +295,9 @@ mod tests {
     fn test_ioctl_tiocgpgrp() {
         let expected_req = PtySlaveCall {
             fd: Fd(1),
-            typ: PtySlaveCallType::GetProcGroup
+            typ: PtySlaveCallType::GetProcGroup,
         };
-        let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse {
-            pid: 123
-        });
+        let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse { pid: 123 });
 
         let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::pid_t) as *mut libc::pid_t;
@@ -316,7 +317,7 @@ mod tests {
     fn test_ioctl_tiocspgrp() {
         let expected_req = PtySlaveCall {
             fd: Fd(1),
-            typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: 123 })
+            typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: 123 }),
         };
         let mock_res = PtySlaveResponse::Success(0);
 

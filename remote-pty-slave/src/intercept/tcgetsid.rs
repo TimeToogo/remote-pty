@@ -17,14 +17,14 @@ pub extern "C" fn intercept_tcgetsid(fd: libc::c_int) -> libc::c_int {
 
 pub(crate) fn tcgetsid_chan(_chan: Arc<dyn RemoteChannel>, _fd: libc::c_int) -> libc::c_int {
     debug("tcgetsid not implemented");
-    return -1;
+    -1
 }
 
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
 
-    use crate::{channel::mock::MockChannel, tcgetsid::tcgetsid_chan};
+    use crate::{channel::mock::MockChannel, intercept::tcgetsid_chan};
 
     #[test]
     fn test_tcgetattr() {
