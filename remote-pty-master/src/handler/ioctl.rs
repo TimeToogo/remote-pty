@@ -87,6 +87,7 @@ mod tests {
 
         match ret {
             PtySlaveResponse::Error(TcError::EBADF) => {}
+            PtySlaveResponse::Error(TcError::EINVAL) => {}
             res @ _ => {
                 dbg!(res);
                 unreachable!()
@@ -117,6 +118,7 @@ mod tests {
 
         match ret {
             PtySlaveResponse::Error(TcError::EBADF) => {}
+            PtySlaveResponse::Error(TcError::EINVAL) => {}
             res @ _ => {
                 dbg!(res);
                 unreachable!()
