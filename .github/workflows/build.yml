@@ -29,6 +29,8 @@ jobs:
       run: |
         cargo test --release --target ${{matrix.arch}}-unknown-linux-musl
       shell: bash
+      env:
+        RUST_BACKTRACE: 1
     - name: build-remote-pty
       run: |
         ./remote-pty-slave/build/build.sh ${{matrix.arch}}-unknown-linux-musl
