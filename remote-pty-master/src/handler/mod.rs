@@ -52,6 +52,7 @@ impl RemotePtyServer {
             PtySlaveCallType::Ioctl(req) => handle_ioctl(ctx, req),
             PtySlaveCallType::GetProcGroup => handle_tcgetpgrp(ctx),
             PtySlaveCallType::SetProgGroup(req) => handle_tcsetpgrp(ctx, req),
+            PtySlaveCallType::WriteStdout(_) => todo!(),
         };
 
         debug(format!("response: {:?}", res));

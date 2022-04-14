@@ -1,5 +1,5 @@
-pub mod transport;
 pub mod mock;
+pub mod transport;
 
 use std::{
     fmt::Debug,
@@ -206,8 +206,8 @@ mod tests {
     use crate::{
         channel::{transport::mem::MemoryTransport, Channel, RemoteChannel},
         proto::{
-            master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, ReadCall, WriteCall},
-            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+            master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall},
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, WriteStdoutCall},
             Fd,
         },
     };
@@ -333,7 +333,7 @@ mod tests {
                 let res = c1
                     .send::<PtyMasterCall, PtyMasterResponse>(
                         Channel::STDOUT,
-                        PtyMasterCall::Write(WriteCall {
+                        PtyMasterCall::WriteStdin(WriteStdinCall {
                             data: vec![1, 2, 3],
                         }),
                     )
@@ -384,7 +384,7 @@ mod tests {
                     move |actual_req| {
                         assert_eq!(
                             actual_req,
-                            PtyMasterCall::Write(WriteCall {
+                            PtyMasterCall::WriteStdin(WriteStdinCall {
                                 data: vec![1, 2, 3]
                             })
                         );
@@ -436,13 +436,18 @@ mod tests {
             thread::spawn(move || {
                 for i in 1..num_iters {
                     let res = c1
-                        .send::<PtyMasterCall, PtyMasterResponse>(
+                        .send::<PtySlaveCall, PtySlaveResponse>(
                             Channel::STDIN,
-                            PtyMasterCall::Read(ReadCall { fd: Fd(i), len: 10 }),
+                            PtySlaveCall {
+                                fd: Fd(i),
+                                typ: PtySlaveCallType::WriteStdout(WriteStdoutCall {
+                                    data: vec![1, 2, 3],
+                                }),
+                            },
                         )
                         .unwrap();
 
-                    assert_eq!(res, PtyMasterResponse::Success(i as _));
+                    assert_eq!(res, PtySlaveResponse::Success(i as _));
                 }
             })
         };
@@ -454,7 +459,7 @@ mod tests {
                     let res = c1
                         .send::<PtyMasterCall, PtyMasterResponse>(
                             Channel::STDOUT,
-                            PtyMasterCall::Write(WriteCall {
+                            PtyMasterCall::WriteStdin(WriteStdinCall {
                                 data: [i as u8; 1024].to_vec(),
                             }),
                         )
@@ -492,15 +497,20 @@ mod tests {
             let mut c2 = c2.clone();
             thread::spawn(move || {
                 for i in 1..num_iters {
-                    c2.receive::<PtyMasterCall, PtyMasterResponse, _>(
+                    c2.receive::<PtySlaveCall, PtySlaveResponse, _>(
                         Channel::STDIN,
                         move |actual_req| {
                             assert_eq!(
                                 actual_req,
-                                PtyMasterCall::Read(ReadCall { fd: Fd(i), len: 10 })
+                                PtySlaveCall {
+                                    fd: Fd(i),
+                                    typ: PtySlaveCallType::WriteStdout(WriteStdoutCall {
+                                        data: vec![1, 2, 3],
+                                    })
+                                }
                             );
 
-                            PtyMasterResponse::Success(i as _)
+                            PtySlaveResponse::Success(i as _)
                         },
                     )
                     .unwrap();
@@ -517,7 +527,7 @@ mod tests {
                         move |actual_req| {
                             assert_eq!(
                                 actual_req,
-                                PtyMasterCall::Write(WriteCall {
+                                PtyMasterCall::WriteStdin(WriteStdinCall {
                                     data: [i as u8; 1024].to_vec(),
                                 })
                             );
