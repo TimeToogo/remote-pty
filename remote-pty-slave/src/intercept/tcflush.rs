@@ -1,12 +1,14 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{
+            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector,
+        },
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -23,7 +25,7 @@ pub extern "C" fn intercept_tcflush(fd: libc::c_int, queue_selector: libc::c_int
 }
 
 pub(crate) fn tcflush_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     queue_selector: libc::c_int,
 ) -> libc::c_int {
@@ -45,7 +47,7 @@ pub(crate) fn tcflush_chan(
         typ: PtySlaveCallType::Flush(TcFlushCall { queue_selector }),
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcflush", msg),
     };
@@ -59,14 +61,13 @@ pub(crate) fn tcflush_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector},
-        Fd,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveResponse, TcFlushCall, TcFlushQueueSelector},
+            Fd,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcflush_chan;
 
@@ -80,9 +81,9 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(0);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
-        let res = tcflush_chan(Arc::new(chan), 1, libc::TCIOFLUSH);
+        let res = tcflush_chan(mock.chan.clone(), 1, libc::TCIOFLUSH);
 
         assert_eq!(res, 0);
     }

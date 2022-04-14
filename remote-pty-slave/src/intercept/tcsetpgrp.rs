@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -24,7 +24,7 @@ pub extern "C" fn intercept_tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> lib
 }
 
 pub(crate) fn tcsetpgrp_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     pgrp: libc::pid_t,
 ) -> libc::c_int {
@@ -34,7 +34,7 @@ pub(crate) fn tcsetpgrp_chan(
         typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: pgrp as _ }),
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcsetpgrp", msg),
     };
@@ -48,14 +48,15 @@ pub(crate) fn tcsetpgrp_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
-        Fd,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
+            Fd,
+        },
     };
 
-    use crate::{channel::mock::MockChannel, intercept::tcsetpgrp_chan};
+    use crate::intercept::tcsetpgrp_chan;
 
     #[test]
     fn test_tcsetpgrp() {
@@ -65,9 +66,9 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(0);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
-        let res = tcsetpgrp_chan(Arc::new(chan), 1, 123);
+        let res = tcsetpgrp_chan(mock.chan.clone(), 1, 123);
 
         assert_eq!(res, 0);
     }

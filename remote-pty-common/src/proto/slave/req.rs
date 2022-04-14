@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-use crate::proto::{Fd, Termios, WinSize};
+use crate::proto::{Termios, WinSize, Fd};
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
@@ -11,6 +11,7 @@ pub struct PtySlaveCall {
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum PtySlaveCallType {
+    RegisterProcess(RegisterProcessCall),
     // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
     GetAttr,
     SetAttr(TcSetAttrCall),
@@ -28,7 +29,17 @@ pub enum PtySlaveCallType {
     // equivalent to ioctl(fd, TIOCGPGRP, *pgrp)
     // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
     GetProcGroup,
-    SetProgGroup(SetProcGroupCall)
+    SetProgGroup(SetProcGroupCall),
+    WriteStdout(WriteStdoutCall)
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct RegisterProcessCall {
+    pub pid: u32,
+    pub pgrp: u32,
+    pub stdin_fd: Fd,
+    pub stdout_fd: Fd,
+    pub stderr_fd: Fd
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html
@@ -95,6 +106,11 @@ pub enum IoctlCall {
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct SetProcGroupCall {
     pub pid: u32
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct WriteStdoutCall {
+    pub data: Vec<u8>
 }
 
 #[cfg(test)]

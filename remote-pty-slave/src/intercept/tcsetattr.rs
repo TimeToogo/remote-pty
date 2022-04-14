@@ -1,12 +1,14 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall},
-    Fd, Termios,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{
+            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall,
+        },
+        Fd, Termios,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -27,7 +29,7 @@ pub extern "C" fn intercept_tcsetattr(
 }
 
 pub(crate) fn tcsetattr_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     optional_actions: libc::c_int,
     term: *mut libc::termios,
@@ -55,7 +57,7 @@ pub(crate) fn tcsetattr_chan(
         }),
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcsetattr", msg),
     };
@@ -69,16 +71,17 @@ pub(crate) fn tcsetattr_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{
-            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{
+                PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetAttrActions, TcSetAttrCall,
+            },
+            Fd, Termios,
         },
-        Fd, Termios,
     };
 
-    use crate::{channel::mock::MockChannel, intercept::tcsetattr_chan};
+    use crate::intercept::tcsetattr_chan;
 
     #[test]
     fn test_tcsetattr() {
@@ -104,7 +107,7 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(0);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
         let mut termios = libc::termios {
             c_iflag: 1,
@@ -125,7 +128,7 @@ mod tests {
         };
 
         let res = tcsetattr_chan(
-            Arc::new(chan),
+            mock.chan.clone(),
             1,
             libc::TCSANOW,
             &mut termios as *mut libc::termios,

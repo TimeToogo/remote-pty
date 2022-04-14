@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlowAction, TcFlowCall},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlowAction, TcFlowCall},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -23,7 +23,7 @@ pub extern "C" fn intercept_tcflow(fd: libc::c_int, action: libc::c_int) -> libc
 }
 
 pub(crate) fn tcflow_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     action: libc::c_int,
 ) -> libc::c_int {
@@ -41,7 +41,7 @@ pub(crate) fn tcflow_chan(
         typ: PtySlaveCallType::Flow(TcFlowCall { action }),
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcflow", msg),
     };
@@ -55,14 +55,13 @@ pub(crate) fn tcflow_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcFlowAction, TcFlowCall, PtySlaveCallType},
-        Fd,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcFlowAction, TcFlowCall},
+            Fd,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcflow_chan;
 
@@ -76,9 +75,9 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(1);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
-        let res = tcflow_chan(Arc::new(chan), 1, libc::TCION);
+        let res = tcflow_chan(mock.chan.clone(), 1, libc::TCION);
 
         assert_eq!(res, 1);
     }

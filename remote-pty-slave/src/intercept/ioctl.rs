@@ -1,7 +1,6 @@
-use std::sync::Arc;
-
 use errno::{set_errno, Errno};
 use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
     log::debug,
     proto::{
         slave::{
@@ -12,7 +11,7 @@ use remote_pty_common::{
     },
 };
 
-use crate::{channel::RemoteChannel, common::handle_intercept, error::generic_error, intercept};
+use crate::{common::handle_intercept, error::generic_error, intercept};
 
 #[cfg(target_os = "linux")]
 type Cmd = libc::Ioctl;
@@ -37,7 +36,7 @@ pub extern "C" fn intercept_ioctl(
 }
 
 fn ioctl_chan(
-    chan: Arc<dyn RemoteChannel>,
+    chan: RemoteChannel,
     fd: libc::c_int,
     cmd: Cmd,
     arg: *mut libc::c_void,
@@ -121,7 +120,7 @@ fn ioctl_chan(
 }
 
 fn ioctl_get_int(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     cmd: IoctlCall,
     arg: *mut libc::c_void,
@@ -132,7 +131,7 @@ fn ioctl_get_int(
     };
 
     // send ioctl request to remote
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("ioctl", msg),
     };
@@ -152,14 +151,14 @@ fn ioctl_get_int(
     ret as _
 }
 
-fn ioctl_set_int(chan: Arc<dyn RemoteChannel>, fd: libc::c_int, cmd: IoctlCall) -> libc::c_int {
+fn ioctl_set_int(mut chan: RemoteChannel, fd: libc::c_int, cmd: IoctlCall) -> libc::c_int {
     let req = PtySlaveCall {
         fd: Fd(fd),
         typ: PtySlaveCallType::Ioctl(cmd),
     };
 
     // send ioctl request to remote
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("ioctl", msg),
     };
@@ -178,25 +177,29 @@ fn cmd_unimplemented(name: &str) -> libc::c_int {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{
-            IoctlCall, IoctlResponse, IoctlValueResponse, ProcGroupResponse, PtySlaveCall,
-            PtySlaveCallType, PtySlaveResponse, SetProcGroupCall,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{
+                IoctlCall, IoctlResponse, IoctlValueResponse, ProcGroupResponse, PtySlaveCall,
+                PtySlaveCallType, PtySlaveResponse, SetProcGroupCall,
+            },
+            Fd,
         },
-        Fd,
     };
 
     use super::ioctl_chan;
-    use crate::channel::mock::MockChannel;
 
     #[test]
     fn test_unimplemented() {
-        let chan = MockChannel::new(vec![], vec![]);
+        let mock = MockChannel::assert_sends::<PtySlaveCall, PtySlaveResponse>(
+            Channel::PTY,
+            vec![],
+            vec![],
+        );
 
         let res = ioctl_chan(
-            Arc::new(chan),
+            mock.chan.clone(),
             1,
             libc::TIOCSBRK as _,
             &mut 10 as *mut _ as *mut libc::c_void,
@@ -208,10 +211,14 @@ mod tests {
 
     #[test]
     fn test_non_terminal_ioctl() {
-        let chan = MockChannel::new(vec![], vec![]);
+        let mock = MockChannel::assert_sends::<PtySlaveCall, PtySlaveResponse>(
+            Channel::PTY,
+            vec![],
+            vec![],
+        );
 
         let res = ioctl_chan(
-            Arc::new(chan),
+            mock.chan.clone(),
             100,
             libc::SIOCGIFADDR as _,
             &mut 10 as *mut _ as *mut libc::c_void,
@@ -229,10 +236,10 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(1);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
         let res = ioctl_chan(
-            Arc::new(chan),
+            mock.chan.clone(),
             1,
             libc::TIOCSETD,
             &mut 10 as *mut _ as *mut libc::c_void,
@@ -252,15 +259,10 @@ mod tests {
             val: IoctlValueResponse::Int(5),
         });
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(
-            Arc::new(chan),
-            1,
-            libc::TIOCGETD,
-            val as *mut _ as *mut libc::c_void,
-        );
+        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCGETD, val as *mut _ as *mut libc::c_void);
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 5 as libc::c_int);
@@ -277,15 +279,10 @@ mod tests {
             val: IoctlValueResponse::Int(10),
         });
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(
-            Arc::new(chan),
-            1,
-            libc::FIONREAD,
-            val as *mut _ as *mut libc::c_void,
-        );
+        let res = ioctl_chan(mock.chan.clone(), 1, libc::FIONREAD, val as *mut _ as *mut libc::c_void);
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 10 as libc::c_int);
@@ -299,15 +296,10 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse { pid: 123 });
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::pid_t) as *mut libc::pid_t;
 
-        let res = ioctl_chan(
-            Arc::new(chan),
-            1,
-            libc::TIOCGPGRP,
-            val as *mut _ as *mut libc::c_void,
-        );
+        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCGPGRP, val as *mut _ as *mut libc::c_void);
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 123 as libc::c_int);
@@ -321,15 +313,10 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(0);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (123 as libc::pid_t) as *mut libc::pid_t;
 
-        let res = ioctl_chan(
-            Arc::new(chan),
-            1,
-            libc::TIOCSPGRP,
-            val as *mut _ as *mut libc::c_void,
-        );
+        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCSPGRP, val as *mut _ as *mut libc::c_void);
 
         assert_eq!(res, 0);
     }
@@ -346,15 +333,10 @@ mod tests {
             val: IoctlValueResponse::Int(10),
         });
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(
-            Arc::new(chan),
-            1,
-            libc::TIOCINQ,
-            val as *mut _ as *mut libc::c_void,
-        );
+        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCINQ, val as *mut _ as *mut libc::c_void);
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 10 as libc::c_int);

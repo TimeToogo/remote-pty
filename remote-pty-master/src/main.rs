@@ -13,9 +13,9 @@ use remote_pty_master::{context::Context, handler::RemotePtyServer};
 // remote slave
 //
 // run master
-// REMOTE_PTY_DEBUG=1 cargo run --target x86_64-unknown-linux-musl -- /tmp/pty.sock /tmp/stdin.sock /tmp/stdout.sock
+// RPTY_DEBUG=1 cargo run --target x86_64-unknown-linux-musl -- /tmp/pty.sock /tmp/stdin.sock /tmp/stdout.sock
 // run slave
-// nc -U /tmp/stdin.sock | REMOTE_PTY_DEBUG=1 REMOTE_PTY_SOCK_PATH=/tmp/pty.sock REMOTE_PTY_FDS=0,1,2 ./bash-linux-x86_64 2>&1 | nc -U /tmp/stdout.sock
+// nc -U /tmp/stdin.sock | RPTY_DEBUG=1 RPTY_SOCK_PATH=/tmp/pty.sock RPTY_FDS=0,1,2 ./bash-linux-x86_64 2>&1 | nc -U /tmp/stdout.sock
 fn main() {
     if unsafe { libc::isatty(libc::STDIN_FILENO) } != 1 {
         panic!("stdin is not a tty");

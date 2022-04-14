@@ -1,16 +1,23 @@
 use bincode::{Decode, Encode};
 
-use crate::proto::{Fd, Termios, WinSize};
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum PtyMasterCall {
+    Signal(PtyMasterSignal),
+    WriteStdin(WriteStdinCall),
+}
 
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub enum PtyMasterSignal {
+    SIGWINCH,
+    SIGINT,
+    SIGTERM,
+    SIGSTOP,
+    SIGCONT,
+    SIGTTOU,
+    SIGTTIN,
+}
 
-// // TODO
-// #[derive(Encode, Decode, PartialEq, Debug, Clone)]
-// pub enum PtyMasterCall {
-//     Signal(PtyMasterSignal),
-//     Write(),
-// }
-
-// #[derive(Encode, Decode, PartialEq, Debug, Clone)]
-// pub enum PtyMasterSignal {
-//     SIGWINCH
-// }
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct WriteStdinCall {
+    pub data: Vec<u8>
+}

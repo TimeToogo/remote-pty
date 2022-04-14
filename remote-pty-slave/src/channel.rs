@@ -1,40 +1,35 @@
-pub mod mock;
-pub mod unix_socket;
+use std::{os::unix::net::UnixStream, sync::Mutex};
 
-use std::sync::{Arc, Mutex};
-
+use errno::set_errno;
 use lazy_static::lazy_static;
 
-use remote_pty_common::proto::slave::{PtySlaveCall, PtySlaveResponse};
+use remote_pty_common::channel::{transport::unix_socket::UnixSocketTransport, RemoteChannel};
 
 use crate::conf::Conf;
 
-use self::unix_socket::{init_socket_channel, UnixSocketChannel};
-
-// an RPC channel for sending the pty calls to the
-// slave side on the remote
-pub trait RemoteChannel {
-    fn send(&self, call: PtySlaveCall) -> Result<PtySlaveResponse, String>;
-}
-
-type ChannelType = UnixSocketChannel;
-
 lazy_static! {
-    static ref GLOBAL_CHANNEL: Mutex<Option<Arc<ChannelType>>> = Mutex::new(Option::None);
+    static ref GLOBAL_CHANNEL: Mutex<Option<RemoteChannel>> = Mutex::new(Option::None);
 }
 
-pub fn get_remote_channel(conf: &Conf) -> Result<Arc<dyn RemoteChannel>, String> {
-    let mut sock = GLOBAL_CHANNEL
+pub fn get_remote_channel(conf: &Conf) -> Result<RemoteChannel, String> {
+    let mut chan = GLOBAL_CHANNEL
         .lock()
         .map_err(|_| "failed to lock channel mutex")?;
 
-    if sock.is_none() {
-        let socket = init_socket_channel(conf)?;
-        let _ = sock.insert(Arc::new(socket));
+    if chan.is_none() {
+        let orig_errno = errno::errno();
+        let transport = UnixStream::connect(&conf.sock_path);
+        set_errno(orig_errno);
+
+        if let Err(e) = transport {
+            return Err(format!("failed to connect to unix socket: {}", e));
+        }
+
+        let transport = UnixSocketTransport::new(transport.unwrap());
+        let _ = chan.insert(RemoteChannel::new(transport));
     }
 
-    let sock = Arc::clone(sock.as_ref().unwrap());
-    Ok(Arc::clone(&(sock as Arc<dyn RemoteChannel>)))
+    Ok(chan.as_ref().unwrap().clone())
 }
 
 #[cfg(test)]
@@ -57,7 +52,8 @@ mod tests {
         let _sock = UnixListener::bind(sock_path).unwrap();
         let conf = Conf {
             sock_path: sock_path.to_string(),
-            fds: vec![],
+            stdin_fd: 0,
+            stdout_fds: vec![],
         };
 
         let _chan = get_remote_channel(&conf).unwrap();

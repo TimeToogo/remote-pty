@@ -39,6 +39,7 @@ impl RemotePtyServer {
         debug(format!("handling request: {:?}", req));
 
         let res = match req.typ {
+            PtySlaveCallType::RegisterProcess(_) => todo!(),
             PtySlaveCallType::GetAttr => handle_tcgetattr(ctx),
             PtySlaveCallType::SetAttr(req) => handle_tcsetattr(ctx, req),
             PtySlaveCallType::Drain => handle_tcdrain(ctx),

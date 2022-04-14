@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -23,7 +23,7 @@ pub extern "C" fn intercept_tcgetattr(fd: libc::c_int, term: *mut libc::termios)
 }
 
 pub(crate) fn tcgetattr_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     term: *mut libc::termios,
 ) -> libc::c_int {
@@ -33,7 +33,7 @@ pub(crate) fn tcgetattr_chan(
         typ: PtySlaveCallType::GetAttr,
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcgetattr", msg),
     };
@@ -52,14 +52,13 @@ pub(crate) fn tcgetattr_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetAttrResponse},
-        Fd, Termios,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetAttrResponse},
+            Fd, Termios,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcgetattr_chan;
 
@@ -84,11 +83,11 @@ mod tests {
             termios: mock_termios,
         });
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
         let mut termios = Termios::zeroed_libc_termios();
 
-        let res = tcgetattr_chan(Arc::new(chan), 1, &mut termios as *mut libc::termios);
+        let res = tcgetattr_chan(mock.chan.clone(), 1, &mut termios as *mut libc::termios);
 
         assert_eq!(res, 0);
         assert_eq!(termios.c_iflag, 1);

@@ -1,21 +1,19 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
 
 // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
 #[no_mangle]
-pub extern "C" fn intercept_tcgetpgrp(
-    fd: libc::c_int
-) -> libc::pid_t {
+pub extern "C" fn intercept_tcgetpgrp(fd: libc::c_int) -> libc::pid_t {
     handle_intercept(
         format!("tcgetpgrp({})", fd),
         fd,
@@ -24,17 +22,14 @@ pub extern "C" fn intercept_tcgetpgrp(
     )
 }
 
-pub(crate) fn tcgetpgrp_chan(
-    chan: Arc<dyn RemoteChannel>,
-    fd: libc::pid_t,
-) -> libc::pid_t {
+pub(crate) fn tcgetpgrp_chan(mut chan: RemoteChannel, fd: libc::pid_t) -> libc::pid_t {
     // send tcgetpgrp request to remote
     let req = PtySlaveCall {
         fd: Fd(fd),
         typ: PtySlaveCallType::GetProcGroup,
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcgetpgrp", msg),
     };
@@ -50,14 +45,13 @@ pub(crate) fn tcgetpgrp_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, ProcGroupResponse},
-        Fd,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{ProcGroupResponse, PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+            Fd,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcgetpgrp_chan;
 
@@ -67,12 +61,10 @@ mod tests {
             fd: Fd(1),
             typ: PtySlaveCallType::GetProcGroup,
         };
-        let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse {
-            pid: 1234
-        });
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock_res = PtySlaveResponse::GetProcGroup(ProcGroupResponse { pid: 1234 });
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
-        let res = tcgetpgrp_chan(Arc::new(chan), 1);
+        let res = tcgetpgrp_chan(mock.chan.clone(), 1);
 
         assert_eq!(res, 1234);
     }

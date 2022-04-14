@@ -26,7 +26,6 @@ pub struct TcGetWinSizeResponse {
     pub winsize: WinSize
 }
 
-// @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum TcError {
     EINVAL,

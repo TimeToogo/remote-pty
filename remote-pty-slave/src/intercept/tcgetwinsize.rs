@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -27,7 +27,7 @@ pub extern "C" fn intercept_tcgetwinsize(
 }
 
 pub(crate) fn tcgetwinsize_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     winsize: *mut libc::winsize,
 ) -> libc::c_int {
@@ -37,7 +37,7 @@ pub(crate) fn tcgetwinsize_chan(
         typ: PtySlaveCallType::GetWinSize,
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcgetwinsize", msg),
     };
@@ -61,14 +61,13 @@ pub(crate) fn tcgetwinsize_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetWinSizeResponse},
-        Fd, WinSize,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcGetWinSizeResponse},
+            Fd, WinSize,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcgetwinsize_chan;
 
@@ -88,7 +87,7 @@ mod tests {
             ret: 0,
             winsize: mock_winsize,
         });
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
         let mut winsize = libc::winsize {
             ws_col: 0,
@@ -97,7 +96,7 @@ mod tests {
             ws_ypixel: 0,
         };
 
-        let res = tcgetwinsize_chan(Arc::new(chan), 1, &mut winsize as *mut libc::winsize);
+        let res = tcgetwinsize_chan(mock.chan.clone(), 1, &mut winsize as *mut libc::winsize);
 
         assert_eq!(res, 0);
         assert_eq!(winsize.ws_col, 300);

@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use remote_pty_common::proto::{
-    slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSendBreakCall},
-    Fd,
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    proto::{
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSendBreakCall},
+        Fd,
+    },
 };
 
 use crate::{
-    channel::RemoteChannel,
     common::handle_intercept,
     error::{generic_error, tc_error},
 };
@@ -23,7 +23,7 @@ pub extern "C" fn intercept_tcsendbreak(fd: libc::c_int, duration: libc::c_int) 
 }
 
 pub(crate) fn tcsendbreak_chan(
-    chan: Arc<dyn RemoteChannel>,
+    mut chan: RemoteChannel,
     fd: libc::c_int,
     duration: libc::c_int,
 ) -> libc::c_int {
@@ -35,7 +35,7 @@ pub(crate) fn tcsendbreak_chan(
         }),
     };
 
-    let res = match chan.send(req) {
+    let res = match chan.send(Channel::PTY, req) {
         Ok(res) => res,
         Err(msg) => return generic_error("tcsendbreak", msg),
     };
@@ -49,14 +49,13 @@ pub(crate) fn tcsendbreak_chan(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use remote_pty_common::proto::{
-        slave::{PtySlaveCall, PtySlaveResponse, TcSendBreakCall, PtySlaveCallType},
-        Fd,
+    use remote_pty_common::{
+        channel::{Channel, mock::MockChannel},
+        proto::{
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSendBreakCall},
+            Fd,
+        },
     };
-
-    use crate::channel::mock::MockChannel;
 
     use super::tcsendbreak_chan;
 
@@ -68,9 +67,9 @@ mod tests {
         };
         let mock_res = PtySlaveResponse::Success(0);
 
-        let chan = MockChannel::new(vec![expected_req], vec![mock_res]);
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
-        let res = tcsendbreak_chan(Arc::new(chan), 1, 10);
+        let res = tcsendbreak_chan(mock.chan.clone(), 1, 10);
 
         assert_eq!(res, 0);
     }

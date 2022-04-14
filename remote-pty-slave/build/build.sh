@@ -17,7 +17,7 @@ ARCH=$(echo "$target" | cut -d'-' -f1)
 echo "= cargo build"
 cargo build --release --target $target
 
-TARGETDIR=$DIR/../../target/$target/release
+TARGETDIR=${CARGO_TARGET_DIR:-$DIR/../../target}/$target/release
 
 cd $TARGETDIR
 
@@ -38,6 +38,10 @@ docker run --rm muslcc/x86_64:$ARCH-linux-musl cat /$ARCH-linux-musl/lib/libc.a 
 # so our remote pty static lib can call the original musl impl's
 echo "= creating prefixed musl libc.a"
 objcopy --prefix-symbols=__libc__ musl-libc.a musl-libc.prefixed.a
+# ensure __errno_location does not get prefixed so all libc's 
+# point to the same errno
+objcopy --redefine-sym __libc_____errno_location=__errno_location musl-libc.prefixed.a
+objcopy --redefine-sym __libc____errno_location=__errno_location musl-libc.prefixed.a
 
 # perform the linking to original impl's into a shared library
 # in order to discover the required symbols from musl
@@ -48,7 +52,7 @@ gcc -Wl,-Map -Wl,ld.mapfile -nostdlib -nodefaultlibs -shared -fPIC -o /dev/null 
     -Wl,--no-whole-archive musl-libc.prefixed.a
 
 echo "= finding required libc symbols"
-grep -Po '(__libc__[a-z0-9_]+)' ld.mapfile > libc.keepsyms
+grep -Po '(__libc__[a-z0-9_]+|__errno_location)' ld.mapfile > libc.keepsyms
 objcopy --strip-all --discard-all --keep-symbols=libc.keepsyms musl-libc.prefixed.a musl-libc.copied.a
 rm -rf muslobjects &&  mkdir -p muslobjects
 ar x musl-libc.copied.a --output=muslobjects

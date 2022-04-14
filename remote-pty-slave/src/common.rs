@@ -1,9 +1,8 @@
-use std::{sync::Arc, fmt::Debug};
+use std::fmt::Debug;
 
+use remote_pty_common::{channel::RemoteChannel, log::debug};
 
-use remote_pty_common::log::debug;
-
-use crate::{channel::{RemoteChannel, get_remote_channel}, conf::get_conf};
+use crate::{channel::get_remote_channel, conf::get_conf};
 
 // boilerplate logic for intercepting a libc function
 // operating on a fd
@@ -15,9 +14,9 @@ pub(crate) fn handle_intercept<R, F1, F2, S>(
 ) -> R
 where
     R: From<i32> + Debug,
-    F1: FnOnce(Arc<dyn RemoteChannel>) -> R,
+    F1: FnOnce(RemoteChannel) -> R,
     F2: FnOnce() -> R,
-    S: Into<String>
+    S: Into<String>,
 {
     debug(format!("intercepted {} (fd: {})", func_name.into(), fd));
 
@@ -31,9 +30,9 @@ where
     };
 
     // if the function was called with an fd outside of the
-    // configured list we ignore it and delegate to the 
+    // configured list we ignore it and delegate to the
     // original libc implementation
-    if !conf.fds.contains(&(fd as _)) {
+    if !conf.is_pty_fd(fd as _) {
         debug("falling back to libc implementation as fd is not configured");
         return fallback_cb();
     }
