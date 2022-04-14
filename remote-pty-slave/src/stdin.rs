@@ -11,10 +11,10 @@ use crate::{channel::get_remote_channel, conf::get_conf};
 // initialisation function that executes on process startup
 // this replaces the stdin fd with a fd which is driven by the remote master
 #[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
+#[cfg_attr(all(target_os = "linux", not(test)), link_section = ".init_array")]
 #[no_mangle]
 pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
-    #[cfg_attr(target_os = "linux", link_section = ".text.startup")]
+    #[cfg_attr(all(target_os = "linux", not(test)), link_section = ".text.startup")]
     #[no_mangle]
     pub extern "C" fn remote_pty_init_stdin() {
         debug("redirecting stdin");
