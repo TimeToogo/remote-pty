@@ -103,6 +103,7 @@ mod tests {
 
         match ret {
             PtySlaveResponse::Success(ret) => assert_eq!(ret, 0),
+            PtySlaveResponse::Error(TcError::EINVAL) => {},
             res @ _ => {
                 dbg!(res);
                 unreachable!()
