@@ -24,7 +24,10 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
 
         let conf = match get_conf() {
             Ok(conf) => conf,
-            Err(err) => panic!("failed to init config: {}", err),
+            Err(err) => {
+                debug(format!("failed to init config: {}", err));
+                return;
+            }
         };
 
         let mut remote_channel = match get_remote_channel(&conf) {
