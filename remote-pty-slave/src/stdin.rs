@@ -14,7 +14,7 @@ use crate::{channel::get_remote_channel, conf::get_conf};
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[no_mangle]
 pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
-    #[cfg_attr(target_os = "linux", ink_section = ".text.startup")]
+    #[cfg_attr(target_os = "linux", link_section = ".text.startup")]
     #[no_mangle]
     pub extern "C" fn remote_pty_init_stdin() {
         debug("redirecting stdin");
