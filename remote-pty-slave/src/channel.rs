@@ -54,6 +54,7 @@ mod tests {
             sock_path: sock_path.to_string(),
             stdin_fd: 0,
             stdout_fds: vec![],
+            pty_fds: vec![],
         };
 
         let _chan = get_remote_channel(&conf).unwrap();

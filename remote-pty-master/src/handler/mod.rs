@@ -54,7 +54,7 @@ impl RemotePtyServer {
             PtySlaveCallType::SetProgGroup(req) => handle_tcsetpgrp(ctx, req),
             PtySlaveCallType::WriteStdout(_) => todo!(),
         };
-
+     
         debug(format!("response: {:?}", res));
 
         res

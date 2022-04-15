@@ -5,6 +5,13 @@ use std::{
     thread,
 };
 
+use remote_pty_common::{
+    channel::{transport::unix_socket::UnixSocketTransport, Channel, RemoteChannel},
+    proto::{
+        master::{PtyMasterCall, PtyMasterResponse, WriteStdinCall},
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+    },
+};
 use remote_pty_master::{context::Context, handler::RemotePtyServer};
 
 // runs the master side of the remote pty
@@ -24,82 +31,83 @@ fn main() {
     let mut args = env::args();
     let _ = args.next();
     let pty_sock = args.next().expect("expected pty sock path");
-    let stdin_sock = args.next().expect("expected stdin sock path");
-    let stdout_sock = args.next().expect("expected stdout sock path");
 
     let _ = fs::remove_file(&pty_sock);
-    let _ = fs::remove_file(&stdin_sock);
-    let _ = fs::remove_file(&stdout_sock);
-
-    // disable io buffering
-    // libc::setvbuf(libc::stdio, buffer, mode, size)
+    let pty_sock = UnixListener::bind(&pty_sock)
+        .unwrap_or_else(|_| panic!("could not bind pty unix socket: {}", pty_sock))
+        .accept()
+        .unwrap()
+        .0;
+    let chan = RemoteChannel::new(UnixSocketTransport::new(pty_sock));
 
     let ctx = Context::from_pair(libc::STDIN_FILENO, libc::STDIN_FILENO);
 
-    let reader = thread::spawn(move || -> Result<()> {
-        let mut stdin_sock = UnixListener::bind(&stdin_sock)
-            .unwrap_or_else(|_| panic!("could not bind stdin unix socket: {}", stdin_sock))
-            .accept()
-            .unwrap()
-            .0;
+    let stdin = {
+        let mut chan = chan.clone();
+        thread::spawn(move || -> Result<()> {
+            let mut buf = [0u8; 1024];
 
-        let mut buf = [0u8; 1024];
+            loop {
+                let n = io::stdin().read(&mut buf)?;
+                if n == 0 {
+                    break;
+                }
 
-        loop {
-            let n = io::stdin().read(&mut buf)?;
-            if n == 0 {
-                break;
+                let res = chan
+                    .send::<PtyMasterCall, PtyMasterResponse>(
+                        Channel::STDIN,
+                        PtyMasterCall::WriteStdin(WriteStdinCall {
+                            data: buf[..n].to_vec(),
+                        }),
+                    )
+                    .unwrap();
+
+                match res {
+                    PtyMasterResponse::WriteSuccess => continue,
+                    _ => panic!("unexpected response"),
+                }
             }
 
-            stdin_sock.write_all(&buf[..n])?;
-            stdin_sock.flush()?;
-        }
+            panic!("stdin sock eof");
+        })
+    };
 
-        panic!("stdin sock eof");
-    });
+    let stdout = {
+        let mut chan = chan.clone();
+        thread::spawn(move || -> Result<()> {
+            loop {
+                chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
+                    let req = match req {
+                        PtySlaveCall {
+                            fd: _,
+                            typ: PtySlaveCallType::WriteStdout(req),
+                        } => req,
+                        _ => panic!("unexpected request"),
+                    };
 
-    let writer = thread::spawn(move || -> Result<()> {
-        let mut stdout_sock = UnixListener::bind(&stdout_sock)
-            .unwrap_or_else(|_| panic!("could not bind stdout unix socket: {}", stdout_sock))
-            .accept()
-            .unwrap()
-            .0;
+                    io::stdout().write_all(req.data.as_slice()).unwrap();
+                    io::stdout().flush().unwrap();
 
-        let mut buf = [0u8; 1024];
-
-        loop {
-            let n = stdout_sock.read(&mut buf)?;
-            if n == 0 {
-                break;
+                    PtySlaveResponse::Success(0)
+                })
+                .unwrap();
             }
+        })
+    };
 
-            io::stdout().write_all(&buf[..n])?;
-            io::stdout().flush()?;
-        }
+    let pty = {
+        let mut chan = chan.clone();
+        thread::spawn(move || -> Result<()> {
+            loop {
+                chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
+                    RemotePtyServer::handle(&ctx, req)
+                })
+                .unwrap();
+            }
+        })
+    };
 
-        panic!("stdout sock eof");
-    });
-
-    let pty_handler = thread::spawn(move || -> Result<()> {
-        let mut pty_sock = UnixListener::bind(&pty_sock)
-            .unwrap_or_else(|_| panic!("could not bind pty unix socket: {}", pty_sock))
-            .accept()
-            .unwrap()
-            .0;
-
-        let conf = bincode::config::standard();
-
-        let enc_err = |_| io::Error::from_raw_os_error(libc::EIO);
-        let dec_err = |_| io::Error::from_raw_os_error(libc::EIO);
-
-        loop {
-            let req = bincode::decode_from_std_read(&mut pty_sock, conf).map_err(enc_err)?;
-            let res = RemotePtyServer::handle(&ctx, req);
-            bincode::encode_into_std_write(res, &mut pty_sock, conf).map_err(dec_err)?;
-        }
-    });
-
-    let _ = reader.join().unwrap();
-    let _ = writer.join().unwrap();
-    let _ = pty_handler.join().unwrap();
+    let _ = stdin.join().unwrap();
+    let _ = stdout.join().unwrap();
+    let _ = pty.join().unwrap();
 }

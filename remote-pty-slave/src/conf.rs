@@ -13,6 +13,8 @@ pub struct Conf {
     pub stdin_fd: i32,
     // stdout fds
     pub stdout_fds: Vec<i32>,
+    // extra fds to intercept pty calls
+    pub pty_fds: Vec<i32>,
 }
 
 impl Conf {
@@ -32,11 +34,21 @@ impl Conf {
                 .map(|i| i.parse::<i32>())
                 .collect::<Result<Vec<i32>, ParseIntError>>()
                 .map_err(|_| "failed to parse numbers in RPTY_STDOUT")?,
+            pty_fds: if env::var("RPTY_EXTRA").is_ok() {
+                env::var("RPTY_EXTRA")
+                    .unwrap()
+                    .split(',')
+                    .map(|i| i.parse::<i32>())
+                    .collect::<Result<Vec<i32>, ParseIntError>>()
+                    .map_err(|_| "failed to parse numbers in RPTY_EXTRA")?
+            } else {
+                vec![]
+            },
         })
     }
 
     pub(crate) fn is_pty_fd(&self, fd: i32) -> bool {
-        self.stdin_fd == fd || self.stdout_fds.contains(&fd)
+        self.stdin_fd == fd || self.stdout_fds.contains(&fd) || self.pty_fds.contains(&fd)
     }
 }
 
