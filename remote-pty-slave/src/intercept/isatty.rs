@@ -19,8 +19,29 @@ pub extern "C" fn intercept_isatty(fd: libc::c_int) -> libc::c_int {
         format!("isatty({})", fd),
         fd,
         |chan| isatty_chan(chan, fd),
-        || unsafe { libc::isatty(fd) },
+        || unsafe { __libc__isatty(fd) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__isatty(fd: libc::c_int) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__isatty(fd: libc::c_int) -> libc::c_int {
+    let isatty = libc::dlsym(libc::RTLD_NEXT, "isatty\0".as_ptr() as *const _);
+
+    if isatty.is_null() {
+        panic!("unable to find isatty sym");
+    }
+
+    let isatty = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int) -> libc::c_int>(isatty);
+
+    isatty(fd)
 }
 
 pub(crate) fn isatty_chan(mut chan: RemoteChannel, fd: libc::c_int) -> libc::c_int {

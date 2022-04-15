@@ -31,7 +31,7 @@ pub extern "C" fn ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> li
     )
 }
 
-#[cfg(target_env = "musl")]
+#[cfg(all(not(test), target_env = "musl"))]
 extern "C" {
     // symbol overridden during build scripts
     fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int;
@@ -51,13 +51,6 @@ unsafe fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> li
 
     ioctl(fd, cmd, arg)
 }
-
-// #[cfg(test)]
-// #[no_mangle]
-// #[allow(non_snake_case)]
-// unsafe fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
-// libc::ioctl(fd, cmd, arg)
-// }
 
 fn ioctl_chan(
     chan: RemoteChannel,
