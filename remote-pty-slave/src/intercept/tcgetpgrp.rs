@@ -13,13 +13,34 @@ use crate::{
 
 // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
 #[no_mangle]
-pub extern "C" fn intercept_tcgetpgrp(fd: libc::c_int) -> libc::pid_t {
+pub extern "C" fn tcgetpgrp(fd: libc::c_int) -> libc::pid_t {
     handle_intercept(
         format!("tcgetpgrp({})", fd),
         fd,
         |chan| tcgetpgrp_chan(chan, fd),
-        || unsafe { libc::tcgetpgrp(fd) },
+        || unsafe { __libc__tcgetpgrp(fd) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcgetpgrp(fd: libc::c_int) -> libc::pid_t;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcgetpgrp(fd: libc::c_int) -> libc::pid_t {
+    let tcgetpgrp = libc::dlsym(libc::RTLD_NEXT, "tcgetpgrp\0".as_ptr() as *const _);
+
+    if tcgetpgrp.is_null() {
+        panic!("unable to find tcgetpgrp sym");
+    }
+
+    let tcgetpgrp = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int) -> libc::pid_t>(tcgetpgrp);
+
+    tcgetpgrp(fd)
 }
 
 pub(crate) fn tcgetpgrp_chan(mut chan: RemoteChannel, fd: libc::pid_t) -> libc::pid_t {

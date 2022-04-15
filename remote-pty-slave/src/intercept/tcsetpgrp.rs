@@ -14,13 +14,34 @@ use crate::{
 // non-standard but equivalent to ioctl(fd, TCIOSWINSZ, *pgrp)
 // @see https://fossies.org/dox/musl-1.2.2/tcsetpgrp_8c_source.html
 #[no_mangle]
-pub extern "C" fn intercept_tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int {
+pub extern "C" fn tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int {
     handle_intercept(
         format!("tcsetpgrp({}, {})", fd, pgrp),
         fd,
         |chan| tcsetpgrp_chan(chan, fd, pgrp),
-        || unsafe { libc::tcsetpgrp(fd, pgrp) },
+        || unsafe { __libc__tcsetpgrp(fd, pgrp) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int {
+    let tcsetpgrp = libc::dlsym(libc::RTLD_NEXT, "tcsetpgrp\0".as_ptr() as *const _);
+
+    if tcsetpgrp.is_null() {
+        panic!("unable to find tcsetpgrp sym");
+    }
+
+    let tcsetpgrp = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int>(tcsetpgrp);
+
+    tcsetpgrp(fd, pgrp)
 }
 
 pub(crate) fn tcsetpgrp_chan(

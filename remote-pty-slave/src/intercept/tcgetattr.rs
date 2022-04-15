@@ -13,13 +13,34 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcgetattr.html
 #[no_mangle]
-pub extern "C" fn intercept_tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
+pub extern "C" fn tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
     handle_intercept(
         format!("tcgetattr({})", fd),
         fd,
         |chan| tcgetattr_chan(chan, fd, term),
-        || unsafe { libc::tcgetattr(fd, term) },
+        || unsafe { __libc__tcgetattr(fd, term) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcgetattr(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int {
+    let tcgetattr = libc::dlsym(libc::RTLD_NEXT, "tcgetattr\0".as_ptr() as *const _);
+
+    if tcgetattr.is_null() {
+        panic!("unable to find tcgetattr sym");
+    }
+
+    let tcgetattr = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, term: *mut libc::termios) -> libc::c_int>(tcgetattr);
+
+    tcgetattr(fd, term)
 }
 
 pub(crate) fn tcgetattr_chan(

@@ -11,10 +11,12 @@ use crate::{
     error::{generic_error, tc_error},
 };
 
+use super::ioctl;
+
 // non-standard but equivalent to ioctl(fd, TIOCGWINSZ, *winsize)
 // @see https://fossies.org/dox/musl-1.2.2/tcgetwinsize_8c_source.html
 #[no_mangle]
-pub extern "C" fn intercept_tcgetwinsize(
+pub extern "C" fn tcgetwinsize(
     fd: libc::c_int,
     winsize: *mut libc::winsize,
 ) -> libc::c_int {
@@ -22,7 +24,7 @@ pub extern "C" fn intercept_tcgetwinsize(
         format!("tcgetwinsize({})", fd),
         fd,
         |chan| tcgetwinsize_chan(chan, fd, winsize),
-        || unsafe { libc::ioctl(fd, libc::TIOCGWINSZ, winsize) },
+        || ioctl(fd, libc::TIOCGWINSZ, winsize as *mut _),
     )
 }
 

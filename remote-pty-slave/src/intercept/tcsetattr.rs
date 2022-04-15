@@ -15,7 +15,7 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcsetattr.html
 #[no_mangle]
-pub extern "C" fn intercept_tcsetattr(
+pub extern "C" fn tcsetattr(
     fd: libc::c_int,
     optional_actions: libc::c_int,
     term: *mut libc::termios,
@@ -24,8 +24,29 @@ pub extern "C" fn intercept_tcsetattr(
         format!("tcsetattr({}, ...)", fd),
         fd,
         |chan| tcsetattr_chan(chan, fd, optional_actions, term),
-        || unsafe { libc::tcsetattr(fd, optional_actions, term) },
+        || unsafe { __libc__tcsetattr(fd, optional_actions, term) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcsetattr(fd: libc::c_int, optional_actions: libc::c_int, term: *mut libc::termios) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcsetattr(fd: libc::c_int, optional_actions: libc::c_int, term: *mut libc::termios) -> libc::c_int {
+    let tcsetattr = libc::dlsym(libc::RTLD_NEXT, "tcsetattr\0".as_ptr() as *const _);
+
+    if tcsetattr.is_null() {
+        panic!("unable to find tcsetattr sym");
+    }
+
+    let tcsetattr = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, optional_actions: libc::c_int, term: *mut libc::termios) -> libc::c_int>(tcsetattr);
+
+    tcsetattr(fd, optional_actions, term)
 }
 
 pub(crate) fn tcsetattr_chan(

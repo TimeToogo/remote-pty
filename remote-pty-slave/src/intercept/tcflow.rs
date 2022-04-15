@@ -13,14 +13,36 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcflow.html
 #[no_mangle]
-pub extern "C" fn intercept_tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+pub extern "C" fn tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
     handle_intercept(
         format!("tcflow({})", fd),
         fd,
         |chan| tcflow_chan(chan, fd, action),
-        || unsafe { libc::tcflow(fd, action) },
+        || unsafe { __libc__tcflow(fd, action) },
     )
 }
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcflow(fd: libc::c_int, action: libc::c_int) -> libc::c_int {
+    let tcflow = libc::dlsym(libc::RTLD_NEXT, "tcflow\0".as_ptr() as *const _);
+
+    if tcflow.is_null() {
+        panic!("unable to find tcflow sym");
+    }
+
+    let tcflow = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, action: libc::c_int) -> libc::c_int>(tcflow);
+
+    tcflow(fd, action)
+}
+
 
 pub(crate) fn tcflow_chan(
     mut chan: RemoteChannel,

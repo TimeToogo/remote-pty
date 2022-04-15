@@ -15,13 +15,34 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcflush.html
 #[no_mangle]
-pub extern "C" fn intercept_tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
+pub extern "C" fn tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
     handle_intercept(
         format!("tcflush({})", fd),
         fd,
         |chan| tcflush_chan(chan, fd, queue_selector),
-        || unsafe { libc::tcflush(fd, queue_selector) },
+        || unsafe { __libc__tcflush(fd, queue_selector) },
     )
+}
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcflush(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int {
+    let tcflush = libc::dlsym(libc::RTLD_NEXT, "tcflush\0".as_ptr() as *const _);
+
+    if tcflush.is_null() {
+        panic!("unable to find tcflush sym");
+    }
+
+    let tcflush = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, queue_selector: libc::c_int) -> libc::c_int>(tcflush);
+
+    tcflush(fd, queue_selector)
 }
 
 pub(crate) fn tcflush_chan(

@@ -11,18 +11,17 @@ use crate::{
     error::{generic_error, tc_error},
 };
 
+use super::ioctl;
+
 // non-standard but equivalent to ioctl(fd, TCIOSWINSZ, *winsize)
 // @see https://fossies.org/dox/musl-1.2.2/tcsetwinsize_8c_source.html
 #[no_mangle]
-pub extern "C" fn intercept_tcsetwinsize(
-    fd: libc::c_int,
-    winsize: *mut libc::winsize,
-) -> libc::c_int {
+pub extern "C" fn tcsetwinsize(fd: libc::c_int, winsize: *mut libc::winsize) -> libc::c_int {
     handle_intercept(
         format!("tcsetwinsize({}, ...)", fd),
         fd,
         |chan| tcsetwinsize_chan(chan, fd, winsize),
-        || unsafe { libc::ioctl(fd, libc::TIOCSWINSZ, winsize) },
+        || ioctl(fd, libc::TIOCSWINSZ, winsize as *mut _),
     )
 }
 
@@ -63,7 +62,7 @@ pub(crate) fn tcsetwinsize_chan(
 #[cfg(test)]
 mod tests {
     use remote_pty_common::{
-        channel::{Channel, mock::MockChannel},
+        channel::{mock::MockChannel, Channel},
         proto::{
             slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetWinSizeCall},
             Fd, WinSize,

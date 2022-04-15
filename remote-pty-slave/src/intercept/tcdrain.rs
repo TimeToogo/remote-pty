@@ -13,14 +13,36 @@ use crate::{
 
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/tcdrain.html
 #[no_mangle]
-pub extern "C" fn intercept_tcdrain(fd: libc::c_int) -> libc::c_int {
+pub extern "C" fn tcdrain(fd: libc::c_int) -> libc::c_int {
     handle_intercept(
         format!("tcdrain({})", fd),
         fd,
         |chan| tcdrain_chan(chan, fd),
-        || unsafe { libc::tcdrain(fd) },
+        || unsafe { __libc__tcdrain(fd) },
     )
 }
+
+#[cfg(all(not(test), target_env = "musl"))]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__tcdrain(fd: libc::c_int) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__tcdrain(fd: libc::c_int) -> libc::c_int {
+    let tcdrain = libc::dlsym(libc::RTLD_NEXT, "tcdrain\0".as_ptr() as *const _);
+
+    if tcdrain.is_null() {
+        panic!("unable to find tcdrain sym");
+    }
+
+    let tcdrain = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int) -> libc::c_int>(tcdrain);
+
+    tcdrain(fd)
+}
+
 
 pub(crate) fn tcdrain_chan(mut chan: RemoteChannel, fd: libc::c_int) -> libc::c_int {
     // send tcdrain request to remote
