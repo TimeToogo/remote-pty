@@ -35,7 +35,7 @@ objcopy --prefix-symbols=__libc__ musl-libc.a musl-libc.prefixed.a
 # this is mildly overkill as we mostly know from the symbol.map file but oh well
 echo "= linking against musl libc"
 gcc -Wl,-Map -Wl,ld.mapfile -nostdlib -nodefaultlibs -shared -fPIC -o /dev/null \
-    -Wl,--whole-archive libremote_pty_slave.renamed.a \
+    -Wl,--whole-archive libremote_pty_slave.a \
     -Wl,--no-whole-archive musl-libc.prefixed.a
 
 echo "= finding required libc symbols"
@@ -53,7 +53,7 @@ ar crs musl-libc.filtered.a muslobjects/*
 echo "= embedding musl libc symbols into combined static lib"
 rm -rf combinedlib/
 mkdir -p combinedlib
-ar x libremote_pty_slave.renamed.a --output=combinedlib/
+ar x libremote_pty_slave.a --output=combinedlib/
 ar x musl-libc.filtered.a --output=combinedlib/
 rm -f libremote_pty_slave.linked.a
 ar crs libremote_pty_slave.linked.a combinedlib/*
