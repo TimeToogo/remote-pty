@@ -12,6 +12,8 @@ lazy_static! {
 }
 
 pub fn get_remote_channel(conf: &Conf) -> Result<RemoteChannel, String> {
+    lazy_static::initialize(&GLOBAL_CHANNEL);
+
     let mut chan = GLOBAL_CHANNEL
         .lock()
         .map_err(|_| "failed to lock channel mutex")?;

@@ -50,7 +50,6 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             let (read_fd, write_fd) = (fds[0], fds[1]);
 
             for stdout_fd in &conf.stdout_fds {
-                libc::close(*stdout_fd as _);
                 if libc::dup2(write_fd, *stdout_fd as _) == -1 {
                     debug("failed to dup pipe to stdout");
                     return;

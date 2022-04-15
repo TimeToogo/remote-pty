@@ -57,6 +57,8 @@ lazy_static! {
 }
 
 pub fn get_conf() -> Result<Arc<Conf>, &'static str> {
+    lazy_static::initialize(&GLOBAL_CONF);
+
     let mut conf = GLOBAL_CONF
         .lock()
         .map_err(|_| "failed to lock conf mutex")?;
