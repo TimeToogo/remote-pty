@@ -28,7 +28,7 @@ jobs:
         $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-gnu
     - name: test-remote-pty
       run: |
-        cargo test --release --target ${{matrix.arch}}-unknown-linux-musl
+        cargo test --release
       shell: bash
       env:
         RUST_BACKTRACE: 1
