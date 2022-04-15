@@ -76,5 +76,7 @@ gcc -Wl,-Map -Wl,mapfile -shared -fPIC -flto -o libremote_pty_slave.linked.so \
     -Wl,--whole-archive libremote_pty_slave.linked.a \
     -Wl,--no-whole-archive \
     -Wl,-lpthread
+# ensure our __errno_location is used when the shared library is loaded
+objcopy --globalize-symbol __errno_location libremote_pty_slave.linked.so
 
 echo "= done"
