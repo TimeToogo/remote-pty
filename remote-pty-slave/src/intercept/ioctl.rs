@@ -22,18 +22,42 @@ type Cmd = libc::c_ulong;
 // @see https://pubs.opengroup.org/onlinepubs/007904975/functions/ioctl.html
 // @see https://code.woboq.org/userspace/glibc/sysdeps/unix/sysv/linux/powerpc/ioctl.c.html
 #[no_mangle]
-pub extern "C" fn intercept_ioctl(
-    fd: libc::c_int,
-    cmd: Cmd,
-    arg: *mut libc::c_void,
-) -> libc::c_int {
+pub extern "C" fn ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
     handle_intercept(
         format!("ioctl({}, {}, ...)", fd, cmd),
         fd,
         |chan| ioctl_chan(chan, fd, cmd, arg),
-        || unsafe { libc::ioctl(fd, cmd, arg) },
+        || unsafe { __libc__ioctl(fd, cmd, arg) },
     )
 }
+
+#[cfg(target_env = "musl")]
+extern "C" {
+    // symbol overridden during build scripts
+    fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int;
+}
+
+#[cfg(any(test, target_os = "macos", target_env = "gnu"))]
+#[no_mangle]
+#[allow(non_snake_case)]
+unsafe fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
+    let ioctl = libc::dlsym(libc::RTLD_NEXT, "ioctl\0".as_ptr() as *const _);
+
+    if ioctl.is_null() {
+        panic!("unable to find ioctl sym");
+    }
+
+    let ioctl = std::mem::transmute::<_, unsafe extern "C" fn(fd: libc::c_int, cmd: Cmd, ...) -> libc::c_int>(ioctl);
+
+    ioctl(fd, cmd, arg)
+}
+
+// #[cfg(test)]
+// #[no_mangle]
+// #[allow(non_snake_case)]
+// unsafe fn __libc__ioctl(fd: libc::c_int, cmd: Cmd, arg: *mut libc::c_void) -> libc::c_int {
+// libc::ioctl(fd, cmd, arg)
+// }
 
 fn ioctl_chan(
     chan: RemoteChannel,
@@ -178,7 +202,7 @@ fn cmd_unimplemented(name: &str) -> libc::c_int {
 #[cfg(test)]
 mod tests {
     use remote_pty_common::{
-        channel::{Channel, mock::MockChannel},
+        channel::{mock::MockChannel, Channel},
         proto::{
             slave::{
                 IoctlCall, IoctlResponse, IoctlValueResponse, ProcGroupResponse, PtySlaveCall,
@@ -262,7 +286,12 @@ mod tests {
         let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCGETD, val as *mut _ as *mut libc::c_void);
+        let res = ioctl_chan(
+            mock.chan.clone(),
+            1,
+            libc::TIOCGETD,
+            val as *mut _ as *mut libc::c_void,
+        );
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 5 as libc::c_int);
@@ -282,7 +311,12 @@ mod tests {
         let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(mock.chan.clone(), 1, libc::FIONREAD, val as *mut _ as *mut libc::c_void);
+        let res = ioctl_chan(
+            mock.chan.clone(),
+            1,
+            libc::FIONREAD,
+            val as *mut _ as *mut libc::c_void,
+        );
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 10 as libc::c_int);
@@ -299,7 +333,12 @@ mod tests {
         let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::pid_t) as *mut libc::pid_t;
 
-        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCGPGRP, val as *mut _ as *mut libc::c_void);
+        let res = ioctl_chan(
+            mock.chan.clone(),
+            1,
+            libc::TIOCGPGRP,
+            val as *mut _ as *mut libc::c_void,
+        );
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 123 as libc::c_int);
@@ -316,7 +355,12 @@ mod tests {
         let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (123 as libc::pid_t) as *mut libc::pid_t;
 
-        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCSPGRP, val as *mut _ as *mut libc::c_void);
+        let res = ioctl_chan(
+            mock.chan.clone(),
+            1,
+            libc::TIOCSPGRP,
+            val as *mut _ as *mut libc::c_void,
+        );
 
         assert_eq!(res, 0);
     }
@@ -336,7 +380,12 @@ mod tests {
         let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
         let val = &mut (0 as libc::c_int) as *mut libc::c_int;
 
-        let res = ioctl_chan(mock.chan.clone(), 1, libc::TIOCINQ, val as *mut _ as *mut libc::c_void);
+        let res = ioctl_chan(
+            mock.chan.clone(),
+            1,
+            libc::TIOCINQ,
+            val as *mut _ as *mut libc::c_void,
+        );
 
         assert_eq!(res, 0);
         assert_eq!(unsafe { *val }, 10 as libc::c_int);

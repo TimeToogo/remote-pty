@@ -43,6 +43,11 @@ objcopy --prefix-symbols=__libc__ musl-libc.a musl-libc.prefixed.a
 objcopy --redefine-sym __libc_____errno_location=__errno_location musl-libc.prefixed.a
 objcopy --redefine-sym __libc____errno_location=__errno_location musl-libc.prefixed.a
 
+# objcopy --redefine-sym __libc____libc=__libc musl-libc.prefixed.a
+# objcopy --redefine-sym __libc____sysinfo=__sysinfo musl-libc.prefixed.a
+# objcopy --redefine-sym __libc____default_stacksize=__default_stacksize musl-libc.prefixed.a
+# objcopy --redefine-sym __libc____default_guardsize=__default_guardsize musl-libc.prefixed.a
+
 # perform the linking to original impl's into a shared library
 # in order to discover the required symbols from musl
 # this is mildly overkill as we mostly know from the symbol.map file but oh well
@@ -52,12 +57,13 @@ gcc -Wl,-Map -Wl,ld.mapfile -nostdlib -nodefaultlibs -shared -fPIC -o /dev/null 
     -Wl,--no-whole-archive musl-libc.prefixed.a
 
 echo "= finding required libc symbols"
-grep -Po '(__libc__[a-z0-9_]+|__errno_location)' ld.mapfile > libc.keepsyms
-objcopy --strip-all --discard-all --keep-symbols=libc.keepsyms musl-libc.prefixed.a musl-libc.copied.a
+# grep -Po '(__libc__[a-z0-9_]+|__errno_location)' ld.mapfile > libc.keepsyms
+# objcopy --strip-all --discard-all --keep-symbols=libc.keepsyms musl-libc.prefixed.a musl-libc.copied.a
 rm -rf muslobjects &&  mkdir -p muslobjects
-ar x musl-libc.copied.a --output=muslobjects
+# ar x musl-libc.copied.a --output=muslobjects
+ar x musl-libc.prefixed.a --output=muslobjects
 # remove all objects with empty symtab
-find muslobjects/ -type f -exec bash -c '[[ $(nm {} 2>&1 | awk "\$2 == \"T\"" | wc -l) == 0 ]] && rm -f {}' \;
+# find muslobjects/ -type f -exec bash -c '[[ $(nm {} 2>&1 | grep "no symbols") > 0 ]] && rm -f {}' \;
 # prefix object files to prevent collisions and recombine into static lib
 find muslobjects/ -type f -exec bash -c 'mv {} $(dirname {})/__libc__$(basename {})' \;
 rm -f musl-libc.filtered.a
@@ -72,10 +78,12 @@ rm -f libremote_pty_slave.linked.a
 ar crs libremote_pty_slave.linked.a combinedlib/*
 
 echo "= creating shared lib from static lib"
-gcc -Wl,-Map -Wl,mapfile -shared -fPIC -flto -o libremote_pty_slave.linked.so \
-    -Wl,--whole-archive libremote_pty_slave.linked.a \
-    -Wl,--no-whole-archive \
-    -Wl,-lpthread
+gcc -Wl,-Map -Wl,mapfile -shared -fPIC -flto -static-libgcc \
+    -o libremote_pty_slave.linked.so \
+    -Wl,--whole-archive libremote_pty_slave.renamed.a \
+    -Wl,--whole-archive musl-libc.prefixed.a \
+    -Wl,--no-whole-archive 
+    # -Wl,-lpthread
 # ensure our __errno_location is used when the shared library is loaded
 objcopy --globalize-symbol __errno_location libremote_pty_slave.linked.so
 

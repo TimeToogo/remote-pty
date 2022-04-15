@@ -1,3 +1,4 @@
+# intercepts
 ioctl __libc__ioctl
 intercept_ioctl ioctl
 isatty __libc__isatty
