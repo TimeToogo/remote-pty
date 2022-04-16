@@ -11,3 +11,4 @@ TODO:
 - [ ] SIGWINCH|SIG* handling (requires listener on slave side)
 - [ ] process group control and SIGTTOU/SIGTTIN handling
 - [ ] filter pty by pipe inodes rather than fd numbers
+- [ ] auto extract shared lib and set LD_PRELOAD from static bash?
