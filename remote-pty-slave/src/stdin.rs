@@ -45,7 +45,6 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
             }
 
             let (read_fd, write_fd) = (fds[0], fds[1]);
-
             if libc::dup2(read_fd, conf.stdin_fd) == -1 {
                 debug("failed to dup pipe to stdin");
                 return;
@@ -53,6 +52,10 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
 
             File::from_raw_fd(write_fd)
         };
+
+        // TODO: get inode of pipes and store in config
+        // use inodes to check if functions should be intercepted
+        // instead of fd's
 
         // stream remote master data to stdin
         thread::spawn(move || loop {

@@ -7,9 +7,10 @@ use std::{
 
 use remote_pty_common::{
     channel::{transport::unix_socket::UnixSocketTransport, Channel, RemoteChannel},
+    log::debug,
     proto::{
         master::{PtyMasterCall, PtyMasterResponse, WriteStdinCall},
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse},
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcError},
     },
 };
 use remote_pty_master::{context::Context, handler::RemotePtyServer};
@@ -20,9 +21,9 @@ use remote_pty_master::{context::Context, handler::RemotePtyServer};
 // remote slave
 //
 // run master
-// RPTY_DEBUG=1 cargo run --target x86_64-unknown-linux-musl -- /tmp/pty.sock /tmp/stdin.sock /tmp/stdout.sock
+// RPTY_DEBUG=1 cargo run --target x86_64-unknown-linux-musl -- /tmp/pty.sock
 // run slave
-// nc -U /tmp/stdin.sock | RPTY_DEBUG=1 RPTY_SOCK_PATH=/tmp/pty.sock RPTY_FDS=0,1,2 ./bash-linux-x86_64 2>&1 | nc -U /tmp/stdout.sock
+// RPTY_DEBUG=1 LD_PRELOAD=/tmp/x86_64-unknown-linux-gnu/release/libremote_pty_slave.linked.so RPTY_SOCK_PATH=/tmp/pty.sock RPTY_STDIN=0 RPTY_STDOUT=1,2 RPTY_EXTRA=255 bash
 fn main() {
     if unsafe { libc::isatty(libc::STDIN_FILENO) } != 1 {
         panic!("stdin is not a tty");
@@ -38,9 +39,30 @@ fn main() {
         .accept()
         .unwrap()
         .0;
-    let chan = RemoteChannel::new(UnixSocketTransport::new(pty_sock));
+    let mut chan = RemoteChannel::new(UnixSocketTransport::new(pty_sock));
 
     let ctx = Context::from_pair(libc::STDIN_FILENO, libc::STDIN_FILENO);
+
+    // init pg
+    chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
+        let req = match req {
+            PtySlaveCall {
+                fd: _,
+                typ: PtySlaveCallType::RegisterProcess(req),
+            } => req,
+            req @ _ => {
+                debug(format!("unexpected req: {:?}", req));
+                return PtySlaveResponse::Error(TcError::EIO);
+            }
+        };
+
+        let mut state = ctx.state.lock().unwrap();
+        state.pgrp = req.pgrp as _;
+        debug("pgrp init");
+
+        PtySlaveResponse::Success(0)
+    })
+    .unwrap();
 
     let stdin = {
         let mut chan = chan.clone();

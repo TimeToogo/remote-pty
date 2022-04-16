@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use remote_pty_common::{
     channel::{Channel, RemoteChannel},
     proto::{
@@ -61,7 +63,7 @@ pub(crate) fn tcgetpgrp_chan(mut chan: RemoteChannel, fd: libc::pid_t) -> libc::
         _ => return generic_error("tcgetpgrp", "unexpected response"),
     };
 
-    res.pid as _
+    (min(res.pid, libc::pid_t::MAX)) as _
 }
 
 #[cfg(test)]

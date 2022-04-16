@@ -58,7 +58,7 @@ impl Context {
 impl TerminalState {
     pub fn new() -> Self {
         Self {
-            pgrp: -1
+            pgrp: 99999
         }
     }
 }

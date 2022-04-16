@@ -21,26 +21,12 @@ TARGETDIR=${CARGO_TARGET_DIR:-$DIR/../../target}/$target/release
 
 cd $TARGETDIR
 
-# rename symbols so our pty functions override libc's
-# we override the symbols pointing to libc with the prefix "__libc__" so they
-# can be later linked to their libc impl's
-#
-# we then rename our versions (intercept_*) to the original libc names
-# so ours will override those provided by libc
-echo "= renaming our lib's symbols"
-
-# remove symbol versioning
-# objcopy --remove-section .gnu.version --remove-section .gnu.version_r libremote_pty_slave.so libremote_pty_slave.renamed.so
-# objcopy  libremote_pty_slave.so libremote_pty_slave.renamed.so
-# nm libremote_pty_slave.renamed.so 2>&1 | grep '@GLIBC' | awk '{print $2}' | \
-#     xargs -L1 sh -c 'objcopy --redefine-sym $0=$(echo $0 | cut -d"@" -f1) libremote_pty_slave.renamed.so'
-
-# objcopy --redefine-syms=$DIR/symbols.map libremote_pty_slave.renamed.so
-
+echo "= creating shared lib"
 gcc -shared -fPIC -flto -static-libgcc \
     -o libremote_pty_slave.linked.so \
     -Wl,--whole-archive ./libremote_pty_slave.a \
     -Wl,--no-whole-archive \
-    -Wl,-lpthread
+    -Wl,-lpthread \
+    -Wl,-ldl
 
 echo "= done"

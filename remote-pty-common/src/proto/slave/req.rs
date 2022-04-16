@@ -37,9 +37,6 @@ pub enum PtySlaveCallType {
 pub struct RegisterProcessCall {
     pub pid: u32,
     pub pgrp: u32,
-    pub stdin_fd: Fd,
-    pub stdout_fd: Fd,
-    pub stderr_fd: Fd
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html

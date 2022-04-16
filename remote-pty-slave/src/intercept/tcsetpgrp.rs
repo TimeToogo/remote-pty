@@ -11,7 +11,6 @@ use crate::{
     error::{generic_error, tc_error},
 };
 
-// non-standard but equivalent to ioctl(fd, TCIOSWINSZ, *pgrp)
 // @see https://fossies.org/dox/musl-1.2.2/tcsetpgrp_8c_source.html
 #[no_mangle]
 pub extern "C" fn tcsetpgrp(fd: libc::c_int, pgrp: libc::pid_t) -> libc::c_int {
