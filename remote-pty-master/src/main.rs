@@ -9,11 +9,12 @@ use remote_pty_common::{
     channel::{transport::unix_socket::UnixSocketTransport, Channel, RemoteChannel},
     log::debug,
     proto::{
-        master::{PtyMasterCall, PtyMasterResponse, WriteStdinCall},
+        master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall},
         slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcError},
     },
 };
 use remote_pty_master::{context::Context, handler::RemotePtyServer};
+use signal_hook::iterator::Signals;
 
 // runs the master side of the remote pty
 // this is designed to be invoked by a shell and controlling terminal
@@ -35,101 +36,155 @@ fn main() {
 
     let _ = fs::remove_file(&pty_sock);
     let pty_sock = UnixListener::bind(&pty_sock)
-        .unwrap_or_else(|_| panic!("could not bind pty unix socket: {}", pty_sock))
-        .accept()
-        .unwrap()
-        .0;
-    let mut chan = RemoteChannel::new(UnixSocketTransport::new(pty_sock));
+        .unwrap_or_else(|_| panic!("could not bind pty unix socket: {}", pty_sock));
 
-    let ctx = Context::from_pair(libc::STDIN_FILENO, libc::STDIN_FILENO);
+    loop {
+        let pty_sock = pty_sock.accept().unwrap().0;
+        println!("== received connection ==");
 
-    // init pg
-    chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
-        let req = match req {
-            PtySlaveCall {
-                fd: _,
-                typ: PtySlaveCallType::RegisterProcess(req),
-            } => req,
-            req @ _ => {
-                debug(format!("unexpected req: {:?}", req));
-                return PtySlaveResponse::Error(TcError::EIO);
-            }
-        };
+        let _worker = thread::spawn(|| {
+            let mut chan = RemoteChannel::new(UnixSocketTransport::new(pty_sock));
 
-        let mut state = ctx.state.lock().unwrap();
-        state.pgrp = req.pgrp as _;
-        debug("pgrp init");
+            let ctx = Context::from_pair(libc::STDIN_FILENO, libc::STDIN_FILENO);
 
-        PtySlaveResponse::Success(0)
-    })
-    .unwrap();
+            // init pgrp
+            chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PGRP, |req| {
+                let req = match req {
+                    PtySlaveCall {
+                        fd: _,
+                        typ: PtySlaveCallType::RegisterProcess(req),
+                    } => req,
+                    req @ _ => {
+                        debug(format!("unexpected req: {:?}", req));
+                        return PtySlaveResponse::Error(TcError::EIO);
+                    }
+                };
 
-    let stdin = {
-        let mut chan = chan.clone();
-        thread::spawn(move || -> Result<()> {
-            let mut buf = [0u8; 1024];
+                let mut state = ctx.state.lock().unwrap();
+                state.pgrp = req.pgrp as _;
+                debug("pgrp init");
 
-            loop {
-                let n = io::stdin().read(&mut buf)?;
-                if n == 0 {
-                    break;
-                }
+                PtySlaveResponse::Success(0)
+            })
+            .unwrap();
 
-                let res = chan
-                    .send::<PtyMasterCall, PtyMasterResponse>(
-                        Channel::STDIN,
-                        PtyMasterCall::WriteStdin(WriteStdinCall {
-                            data: buf[..n].to_vec(),
-                        }),
-                    )
-                    .unwrap();
+            let stdin = {
+                let mut chan = chan.clone();
+                thread::spawn(move || -> Result<()> {
+                    let mut buf = [0u8; 1024];
 
-                match res {
-                    PtyMasterResponse::WriteSuccess => continue,
-                    _ => panic!("unexpected response"),
-                }
-            }
+                    loop {
+                        let n = io::stdin().read(&mut buf)?;
+                        if n == 0 {
+                            break;
+                        }
 
-            panic!("stdin sock eof");
-        })
-    };
+                        let res = chan
+                            .send::<PtyMasterCall, PtyMasterResponse>(
+                                Channel::STDIN,
+                                PtyMasterCall::WriteStdin(WriteStdinCall {
+                                    data: buf[..n].to_vec(),
+                                }),
+                            )
+                            .unwrap();
 
-    let stdout = {
-        let mut chan = chan.clone();
-        thread::spawn(move || -> Result<()> {
-            loop {
-                chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
-                    let req = match req {
-                        PtySlaveCall {
-                            fd: _,
-                            typ: PtySlaveCallType::WriteStdout(req),
-                        } => req,
-                        _ => panic!("unexpected request"),
-                    };
+                        match res {
+                            PtyMasterResponse::WriteSuccess => continue,
+                            _ => panic!("unexpected response"),
+                        }
+                    }
 
-                    io::stdout().write_all(req.data.as_slice()).unwrap();
-                    io::stdout().flush().unwrap();
-
-                    PtySlaveResponse::Success(0)
+                    panic!("stdin sock eof");
                 })
-                .unwrap();
-            }
-        })
-    };
+            };
 
-    let pty = {
-        let mut chan = chan.clone();
-        thread::spawn(move || -> Result<()> {
-            loop {
-                chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
-                    RemotePtyServer::handle(&ctx, req)
+            let stdout = {
+                let mut chan = chan.clone();
+                thread::spawn(move || -> Result<()> {
+                    loop {
+                        chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
+                            let req = match req {
+                                PtySlaveCall {
+                                    fd: _,
+                                    typ: PtySlaveCallType::WriteStdout(req),
+                                } => req,
+                                _ => panic!("unexpected request"),
+                            };
+
+                            io::stdout().write_all(req.data.as_slice()).unwrap();
+                            io::stdout().flush().unwrap();
+
+                            PtySlaveResponse::Success(0)
+                        })
+                        .unwrap();
+                    }
                 })
-                .unwrap();
-            }
-        })
-    };
+            };
 
-    let _ = stdin.join().unwrap();
-    let _ = stdout.join().unwrap();
-    let _ = pty.join().unwrap();
+            let pty = {
+                let mut chan = chan.clone();
+                thread::spawn(move || -> Result<()> {
+                    loop {
+                        chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
+                            RemotePtyServer::handle(&ctx, req)
+                        })
+                        .unwrap();
+                    }
+                })
+            };
+
+            let signals = {
+                let mut chan = chan.clone();
+                thread::spawn(move || -> Result<()> {
+                    let mut sigs = Signals::new(&[
+                        libc::SIGWINCH,
+                        libc::SIGINT,
+                        libc::SIGTERM,
+                        libc::SIGCONT,
+                        libc::SIGTTOU,
+                        libc::SIGTTIN,
+                    ])?;
+                    loop {
+                        for sig in sigs.wait() {
+                            let sig = match sig {
+                                libc::SIGWINCH => PtyMasterSignal::SIGWINCH,
+                                libc::SIGINT => PtyMasterSignal::SIGINT,
+                                libc::SIGTERM => PtyMasterSignal::SIGTERM,
+                                libc::SIGCONT => PtyMasterSignal::SIGCONT,
+                                libc::SIGTTOU => PtyMasterSignal::SIGTTOU,
+                                libc::SIGTTIN => PtyMasterSignal::SIGTTIN,
+                                _ => {
+                                    debug(format!("unexpected signal: {}", sig));
+                                    continue;
+                                }
+                            };
+                            debug(format!("received signal: {:?}", sig));
+
+                            let res = chan
+                                .send::<PtyMasterCall, PtyMasterResponse>(
+                                    Channel::SIGNAL,
+                                    PtyMasterCall::Signal(sig),
+                                )
+                                .unwrap();
+
+                            match res {
+                                PtyMasterResponse::Success(_) => continue,
+                                _ => {
+                                    debug(format!("unexpected response: {:?}", res));
+                                    panic!("unexpected response");
+                                }
+                            }
+                        }
+                    }
+                })
+            };
+
+            let _ = stdin.join().unwrap();
+            let _ = stdout.join().unwrap();
+            let _ = pty.join().unwrap();
+            let _ = signals.join().unwrap();
+        });
+
+        // worker.join().unwrap();
+    }
 }

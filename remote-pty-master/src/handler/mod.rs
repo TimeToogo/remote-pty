@@ -36,8 +36,6 @@ pub struct RemotePtyServer;
 
 impl RemotePtyServer {
     pub fn handle(ctx: &Context, req: PtySlaveCall) -> PtySlaveResponse {
-        debug(format!("handling request: {:?}", req));
-
         let res = match req.typ {
             PtySlaveCallType::RegisterProcess(_) => todo!(),
             PtySlaveCallType::GetAttr => handle_tcgetattr(ctx),

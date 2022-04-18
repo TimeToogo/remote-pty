@@ -8,3 +8,4 @@ remote-pty-common = { path = "../remote-pty-common" }
 libc = "0.2.90"
 bincode = "2.0.0-rc.1"
 errno = "0.2.7"
+signal-hook = "0.3.7"

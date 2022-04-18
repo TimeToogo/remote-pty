@@ -2,12 +2,15 @@ pub mod mock;
 pub mod transport;
 
 use std::{
+    any::type_name,
     fmt::Debug,
     io,
     sync::{Arc, Condvar, Mutex, MutexGuard},
 };
 
 use bincode::{Decode, Encode};
+
+use crate::log::debug;
 
 use self::transport::Transport;
 
@@ -27,11 +30,13 @@ struct MessageReceiver {
     condvar: Condvar,
 }
 
-#[derive(Encode, Decode, PartialEq, Clone, Copy)]
+#[derive(Encode, Decode, PartialEq, Clone, Copy, Debug)]
 pub enum Channel {
+    PGRP,
     PTY,
     STDIN,
     STDOUT,
+    SIGNAL,
 }
 
 // wrapper struct used for encoding/decoding messages in a generic format
@@ -93,8 +98,14 @@ impl RemoteChannel {
     // serialise and write the request to the underlying transport
     fn write_msg<Req>(&mut self, chan: Channel, mode: MessageMode, req: Req) -> Result<(), String>
     where
-        Req: Encode,
+        Req: Encode + Debug,
     {
+        debug(format!(
+            "sending {} message: {:?} {:?}",
+            type_name::<Req>(),
+            chan,
+            req
+        ));
         let data = bincode::encode_to_vec(req, self.conf)
             .map_err(|e| format!("failed to encode req: {}", e))?;
 
@@ -112,13 +123,19 @@ impl RemoteChannel {
 
     fn read_msg<Res>(&self, chan: Channel, mode: MessageMode) -> Result<Res, String>
     where
-        Res: Decode,
+        Res: Decode + Debug,
     {
         loop {
             // ensure mutex is unlocked after checking if message is available
             {
                 let queue = self.receiver.queue.lock().unwrap();
                 if let Some(res) = self.find_matching_message(queue, chan, mode)? {
+                    debug(format!(
+                        "received {} message: {:?} {:?}",
+                        type_name::<Res>(),
+                        chan,
+                        res
+                    ));
                     return Ok(res);
                 }
             }
@@ -135,6 +152,12 @@ impl RemoteChannel {
                     let queue = self.receiver.condvar.wait(queue).unwrap();
 
                     if let Some(res) = self.find_matching_message(queue, chan, mode)? {
+                        debug(format!(
+                            "received {} message: {:?} {:?}",
+                            type_name::<Res>(),
+                            chan,
+                            res
+                        ));
                         return Ok(res);
                     }
 

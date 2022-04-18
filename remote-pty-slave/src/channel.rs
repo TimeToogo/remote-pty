@@ -1,9 +1,12 @@
-use std::{os::unix::net::UnixStream, sync::Mutex};
+use std::{
+    os::unix::{net::UnixStream, prelude::AsRawFd, prelude::FromRawFd},
+    sync::Mutex,
+};
 
 use errno::set_errno;
 use lazy_static::lazy_static;
 
-use remote_pty_common::channel::{transport::unix_socket::UnixSocketTransport, RemoteChannel};
+use remote_pty_common::channel::{transport::rw::ReadWriteTransport, RemoteChannel};
 
 use crate::conf::Conf;
 
@@ -27,16 +30,54 @@ pub fn get_remote_channel(conf: &Conf) -> Result<RemoteChannel, String> {
             return Err(format!("failed to connect to unix socket: {}", e));
         }
 
-        let transport = UnixSocketTransport::new(transport.unwrap());
+        let transport_read = ensure_not_stdio_fd(conf, transport.unwrap())?;
+        let transport_write = ensure_not_stdio_fd(
+            conf,
+            transport_read
+                .try_clone()
+                .map_err(|_| "failed to clone unix socket")?,
+        )?;
+        let transport = ReadWriteTransport::new(transport_read, transport_write);
         let _ = chan.insert(RemoteChannel::new(transport));
     }
 
     Ok(chan.as_ref().unwrap().clone())
 }
 
+fn ensure_not_stdio_fd<T: AsRawFd + FromRawFd>(conf: &Conf, transport: T) -> Result<T, String> {
+    let fd = transport.as_raw_fd();
+    let mut new_fd = 255;
+
+    while conf.is_pty_fd(new_fd) || is_fd_taken(new_fd) {
+        new_fd -= 1;
+
+        if new_fd == 0 {
+            return Err("failed to find available fd for transport channel".to_string());
+        }
+    }
+
+    let res = unsafe { libc::dup2(fd, new_fd) };
+
+    if res == -1 {
+        return Err(format!("failed to dup transport fd to new fd {}", new_fd));
+    }
+
+    let res = unsafe { libc::close(fd) };
+
+    if res == -1 {
+        return Err(format!("failed to close original transport fd {}", fd));
+    }
+
+    Ok(unsafe { T::from_raw_fd(new_fd) })
+}
+
+fn is_fd_taken(fd: libc::c_int) -> bool {
+    return unsafe { libc::fcntl(fd, libc::F_GETFL) } != -1 || errno::errno().0 != libc::EBADF;
+}
+
 #[cfg(test)]
 mod tests {
-    use std::os::unix::net::UnixListener;
+    use std::{os::unix::net::UnixListener, thread};
 
     use crate::{
         channel::{get_remote_channel, GLOBAL_CHANNEL},
@@ -57,6 +98,7 @@ mod tests {
             stdin_fd: 0,
             stdout_fds: vec![],
             pty_fds: vec![],
+            thread_id: 1
         };
 
         let _chan = get_remote_channel(&conf).unwrap();

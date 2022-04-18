@@ -1,7 +1,7 @@
 use std::{
     env,
     num::ParseIntError,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, 
 };
 
 use lazy_static::lazy_static;
@@ -15,6 +15,8 @@ pub struct Conf {
     pub stdout_fds: Vec<i32>,
     // extra fds to intercept pty calls
     pub pty_fds: Vec<i32>,
+    // original thread id
+    pub thread_id: i64
 }
 
 impl Conf {
@@ -44,6 +46,11 @@ impl Conf {
             } else {
                 vec![]
             },
+            //
+            #[cfg(target_os = "linux")]
+            thread_id: unsafe { libc::gettid() } as _,
+            #[cfg(not(target_os = "linux"))]
+            thread_id: 0, // not implemented 
         })
     }
 

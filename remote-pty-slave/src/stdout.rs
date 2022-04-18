@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, os::unix::prelude::FromRawFd, thread};
+use std::{fs::File, io::Read, os::unix::prelude::FromRawFd, thread, time::Duration};
 
 use remote_pty_common::{
     channel::Channel,
@@ -10,6 +10,15 @@ use remote_pty_common::{
 };
 
 use crate::{channel::get_remote_channel, conf::get_conf};
+
+#[cfg(target_os = "linux")]
+#[link(name = "c")]
+extern "C" {
+    #[link_name = "stdout"]
+    static mut libc_stdout: *mut libc::FILE;
+    #[link_name = "stderr"]
+    static mut libc_stderr: *mut libc::FILE;
+}
 
 // initialisation function that executes on process startup
 // this replaces the stdout fd's with a fd which is streamed to the remote master
@@ -42,7 +51,11 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
         let mut stdout = unsafe {
             let mut fds = [0 as libc::c_int; 2];
 
-            if libc::pipe(&mut fds as *mut _) != 0 {
+            #[cfg(target_os = "linux")]
+            let res = libc::pipe2(&mut fds as *mut _, libc::O_CLOEXEC);
+            #[cfg(not(target_os = "linux"))]
+            let res = libc::pipe(&mut fds as *mut _);
+            if res != 0 {
                 debug("failed to create pipe");
                 return;
             }
@@ -54,6 +67,23 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                     debug("failed to dup pipe to stdout");
                     return;
                 }
+            }
+
+            // disable output buffering
+            #[cfg(target_os = "linux")]
+            {
+                libc::setvbuf(
+                    libc_stdout,
+                    std::ptr::null::<libc::c_char>() as *mut _,
+                    libc::_IONBF,
+                    0,
+                );
+                libc::setvbuf(
+                    libc_stderr,
+                    std::ptr::null::<libc::c_char>() as *mut _,
+                    libc::_IONBF,
+                    0,
+                );
             }
 
             File::from_raw_fd(read_fd)
@@ -93,6 +123,18 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                 }
             }
         });
+
+        // this is terrible.
+        // but it is here to prevent the stdout thread being terminated 
+        // before it has a change to send the stdout buffer to the remote.
+        // this occurs when there is still buffered output after the main
+        // function returns killing the thread before it can read the output.
+        unsafe {
+            extern "C" fn wait_for_output() {
+                thread::sleep(Duration::from_millis(100));
+            }
+            libc::atexit(wait_for_output);
+        }
 
         debug("init stdout");
     }

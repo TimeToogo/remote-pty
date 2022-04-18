@@ -8,6 +8,13 @@ use remote_pty_common::{
 
 use crate::{channel::get_remote_channel, conf::get_conf};
 
+#[cfg(target_os = "linux")]
+#[link(name = "c")]
+extern "C" {
+    #[link_name = "stdin"]
+    static mut libc_stdin: *mut libc::FILE;
+}
+
 // initialisation function that executes on process startup
 // this replaces the stdin fd with a fd which is driven by the remote master
 #[used]
@@ -39,7 +46,11 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
         let mut stdin = unsafe {
             let mut fds = [0 as libc::c_int; 2];
 
-            if libc::pipe(&mut fds as *mut _) != 0 {
+            #[cfg(target_os = "linux")]
+            let res = libc::pipe2(&mut fds as *mut _, libc::O_CLOEXEC);
+            #[cfg(not(target_os = "linux"))]
+            let res = libc::pipe(&mut fds as *mut _);
+            if res != 0 {
                 debug("failed to create pipe");
                 return;
             }
@@ -49,6 +60,15 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
                 debug("failed to dup pipe to stdin");
                 return;
             }
+
+            // disable input buffering
+            #[cfg(target_os = "linux")]
+            libc::setvbuf(
+                libc_stdin,
+                std::ptr::null::<libc::c_char>() as *mut _,
+                libc::_IONBF,
+                0,
+            );
 
             File::from_raw_fd(write_fd)
         };

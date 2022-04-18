@@ -39,7 +39,7 @@ pub static REMOTE_PTY_INIT_PGRP: extern "C" fn() = {
         let (pid, pgrp) = unsafe { (libc::getpid(), libc::getpgrp()) };
 
         let res = remote_channel.send::<PtySlaveCall, PtySlaveResponse>(
-            Channel::PTY,
+            Channel::PGRP,
             PtySlaveCall {
                 fd: Fd(0), // unused
                 typ: PtySlaveCallType::RegisterProcess(RegisterProcessCall {

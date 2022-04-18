@@ -37,6 +37,16 @@ where
         return fallback_cb();
     }
 
+    // if the caller is not in the main thread we don't intercept
+    // the calls as libraries as it will interfere with the channel
+    // on the main thread, potentially creating/stealing messages causing 
+    // deadlocks
+    #[cfg(target_os = "linux")]
+    if conf.thread_id != unsafe { libc::gettid() } as _ {
+        debug("called on non-main thread, not intercepting");
+        return fallback_cb();
+    }
+
     // else we get the channel and send the request to the remote
     let chan = match get_remote_channel(&conf) {
         Ok(chan) => chan,

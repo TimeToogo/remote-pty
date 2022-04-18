@@ -11,7 +11,6 @@ pub enum PtyMasterSignal {
     SIGWINCH,
     SIGINT,
     SIGTERM,
-    SIGSTOP,
     SIGCONT,
     SIGTTOU,
     SIGTTIN,

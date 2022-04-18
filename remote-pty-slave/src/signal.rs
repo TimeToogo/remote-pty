@@ -1,4 +1,10 @@
-use remote_pty_common::log::debug;
+use std::thread;
+
+use remote_pty_common::{
+    channel::Channel,
+    log::debug,
+    proto::master::{IoError, PtyMasterCall, PtyMasterResponse, PtyMasterSignal},
+};
 
 use crate::{channel::get_remote_channel, conf::get_conf};
 
@@ -29,7 +35,42 @@ pub static REMOTE_PTY_INIT_SIGNAL_HANDLER: extern "C" fn() = {
             }
         };
 
-        // TODO
+        thread::spawn(move || loop {
+            remote_channel
+                .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::SIGNAL, |req| {
+                    let signal = match req {
+                        PtyMasterCall::Signal(sig) => sig,
+                        _ => {
+                            debug(format!("unexpected request: {:?}", req));
+                            return PtyMasterResponse::Error(IoError::EIO);
+                        }
+                    };
+
+                    debug(format!("received signal from master: {:?}", signal));
+
+                    let signal = match signal {
+                        PtyMasterSignal::SIGWINCH => libc::SIGWINCH,
+                        PtyMasterSignal::SIGINT => libc::SIGINT,
+                        PtyMasterSignal::SIGTERM => libc::SIGTERM,
+                        PtyMasterSignal::SIGCONT => libc::SIGCONT,
+                        PtyMasterSignal::SIGTTOU => libc::SIGTTOU,
+                        PtyMasterSignal::SIGTTIN => libc::SIGTTIN,
+                    };
+
+                    let ret = unsafe { libc::kill(libc::getpid(), signal) };
+
+                    if ret == -1 {
+                        debug(format!(
+                            "failed to send signal to local process: {}",
+                            errno::errno()
+                        ));
+                        return PtyMasterResponse::Error(IoError::EIO);
+                    }
+
+                    PtyMasterResponse::Success(0)
+                })
+                .unwrap();
+        });
 
         debug("init signal handler");
     }
