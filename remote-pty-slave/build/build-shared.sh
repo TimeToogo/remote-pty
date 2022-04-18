@@ -17,9 +17,9 @@ ARCH=$(echo "$target" | cut -d'-' -f1)
 cd $DIR
 
 echo "= cargo build"
-cargo build --release --target $target
+cargo build  --target $target
 
-TARGETDIR=${CARGO_TARGET_DIR:-$DIR/../../target}/$target/release
+TARGETDIR=${CARGO_TARGET_DIR:-$DIR/../../target}/$target/debug
 cd $TARGETDIR
 
 echo "= creating shared lib"

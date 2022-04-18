@@ -12,7 +12,7 @@ use crate::{channel::get_remote_channel, conf::get_conf};
 #[link(name = "c")]
 extern "C" {
     #[link_name = "stdin"]
-    static mut libc_stdin: *mut libc::FILE;
+    static mut LIBC_STDIN: *mut libc::FILE;
 }
 
 // initialisation function that executes on process startup
@@ -64,7 +64,7 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
             // disable input buffering
             #[cfg(target_os = "linux")]
             libc::setvbuf(
-                libc_stdin,
+                LIBC_STDIN,
                 std::ptr::null::<libc::c_char>() as *mut _,
                 libc::_IONBF,
                 0,

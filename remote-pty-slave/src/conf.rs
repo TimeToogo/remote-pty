@@ -57,6 +57,14 @@ impl Conf {
     pub(crate) fn is_pty_fd(&self, fd: i32) -> bool {
         self.stdin_fd == fd || self.stdout_fds.contains(&fd) || self.pty_fds.contains(&fd)
     }
+
+    pub(crate) fn is_main_thread(&self) -> bool {
+        #[cfg(target_os = "linux")]
+        return self.thread_id == unsafe { libc::gettid() } as _;
+        
+        #[cfg(all(test, not(target_os = "linux")))]
+        return true;
+    }
 }
 
 lazy_static! {

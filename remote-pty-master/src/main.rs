@@ -68,6 +68,10 @@ fn main() {
             })
             .unwrap();
 
+            // TODO: implement proper thread synchronisation and clean up with process control
+            // currently threads from child processes are racing to read stdin causing inconsistent
+            // behaviour, with threads for dead children reading stdin and getting SIGPIPE when trying
+            // to forward to remote
             let stdin = {
                 let mut chan = chan.clone();
                 thread::spawn(move || -> Result<()> {
@@ -85,10 +89,13 @@ fn main() {
                                 PtyMasterCall::WriteStdin(WriteStdinCall {
                                     data: buf[..n].to_vec(),
                                 }),
-                            )
-                            .unwrap();
+                            );
 
-                        match res {
+                        if res.is_err() {
+                            return Ok(());
+                        }
+
+                        match res.unwrap() {
                             PtyMasterResponse::WriteSuccess => continue,
                             _ => panic!("unexpected response"),
                         }
@@ -102,7 +109,7 @@ fn main() {
                 let mut chan = chan.clone();
                 thread::spawn(move || -> Result<()> {
                     loop {
-                        chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
+                        let res = chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
                             let req = match req {
                                 PtySlaveCall {
                                     fd: _,
@@ -115,8 +122,11 @@ fn main() {
                             io::stdout().flush().unwrap();
 
                             PtySlaveResponse::Success(0)
-                        })
-                        .unwrap();
+                        });
+                        
+                        if res.is_err() {
+                            return Ok(());
+                        }
                     }
                 })
             };
@@ -125,10 +135,13 @@ fn main() {
                 let mut chan = chan.clone();
                 thread::spawn(move || -> Result<()> {
                     loop {
-                        chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
+                        let res = chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
                             RemotePtyServer::handle(&ctx, req)
-                        })
-                        .unwrap();
+                        });
+                    
+                        if res.is_err() {
+                            return Ok(());
+                        }
                     }
                 })
             };
@@ -164,13 +177,16 @@ fn main() {
                                 .send::<PtyMasterCall, PtyMasterResponse>(
                                     Channel::SIGNAL,
                                     PtyMasterCall::Signal(sig),
-                                )
-                                .unwrap();
+                                );
 
-                            match res {
+                            if res.is_err() {
+                                return Ok(());
+                            }
+
+                            match res.unwrap() {
                                 PtyMasterResponse::Success(_) => continue,
                                 _ => {
-                                    debug(format!("unexpected response: {:?}", res));
+                                    debug("unexpected response");
                                     panic!("unexpected response");
                                 }
                             }
@@ -179,10 +195,10 @@ fn main() {
                 })
             };
 
-            let _ = stdin.join().unwrap();
-            let _ = stdout.join().unwrap();
-            let _ = pty.join().unwrap();
-            let _ = signals.join().unwrap();
+            let _ = stdin.join();
+            let _ = stdout.join();
+            let _ = pty.join();
+            let _ = signals.join();
         });
 
         // worker.join().unwrap();

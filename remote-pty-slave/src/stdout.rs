@@ -1,4 +1,9 @@
-use std::{fs::File, io::Read, os::unix::prelude::FromRawFd, thread, time::Duration};
+use std::{
+    fs::File,
+    io::Read,
+    os::unix::prelude::FromRawFd,
+    thread::{self, JoinHandle},
+};
 
 use remote_pty_common::{
     channel::Channel,
@@ -15,10 +20,13 @@ use crate::{channel::get_remote_channel, conf::get_conf};
 #[link(name = "c")]
 extern "C" {
     #[link_name = "stdout"]
-    static mut libc_stdout: *mut libc::FILE;
+    static mut LIBC_STDOUT: *mut libc::FILE;
     #[link_name = "stderr"]
-    static mut libc_stderr: *mut libc::FILE;
+    static mut LIBC_STDERR: *mut libc::FILE;
 }
+
+#[cfg(target_os = "linux")]
+static mut STDOUT_STREAM_THREAD: Option<JoinHandle<()>> = Option::None;
 
 // initialisation function that executes on process startup
 // this replaces the stdout fd's with a fd which is streamed to the remote master
@@ -55,6 +63,7 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             let res = libc::pipe2(&mut fds as *mut _, libc::O_CLOEXEC);
             #[cfg(not(target_os = "linux"))]
             let res = libc::pipe(&mut fds as *mut _);
+
             if res != 0 {
                 debug("failed to create pipe");
                 return;
@@ -69,17 +78,22 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                 }
             }
 
+            if !conf.stdout_fds.contains(&write_fd) {
+                        debug(format!("closing {}", write_fd));
+                libc::close(write_fd);
+            }
+
             // disable output buffering
             #[cfg(target_os = "linux")]
             {
                 libc::setvbuf(
-                    libc_stdout,
+                    LIBC_STDOUT,
                     std::ptr::null::<libc::c_char>() as *mut _,
                     libc::_IONBF,
                     0,
                 );
                 libc::setvbuf(
-                    libc_stderr,
+                    LIBC_STDERR,
                     std::ptr::null::<libc::c_char>() as *mut _,
                     libc::_IONBF,
                     0,
@@ -90,11 +104,15 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
         };
 
         // stream remote master data to stdin
-        thread::spawn(move || {
+        let _stream_thread = thread::spawn(move || {
             let mut buff = [0u8; 4096];
 
             loop {
                 let n = match stdout.read(&mut buff) {
+                    Ok(0) => {
+                        debug("eof from stdout pipe");
+                        return;
+                    }
                     Ok(n) => n,
                     Err(err) => {
                         debug(format!("failed to read from stdout: {}", err));
@@ -106,7 +124,7 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                     .send::<PtySlaveCall, PtySlaveResponse>(
                         Channel::STDOUT,
                         PtySlaveCall {
-                            fd: Fd(0), // not used: todo clean data structure
+                            fd: Fd(0), // not used, todo: refactor data structure
                             typ: PtySlaveCallType::WriteStdout(WriteStdoutCall {
                                 data: buff[..n].to_vec(),
                             }),
@@ -124,15 +142,33 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             }
         });
 
-        // this is terrible.
-        // but it is here to prevent the stdout thread being terminated 
+        // this is here to prevent the stdout thread being terminated
         // before it has a change to send the stdout buffer to the remote.
         // this occurs when there is still buffered output after the main
         // function returns killing the thread before it can read the output.
+        #[cfg(target_os = "linux")]
         unsafe {
+            let _ = STDOUT_STREAM_THREAD.insert(_stream_thread);
+
             extern "C" fn wait_for_output() {
-                thread::sleep(Duration::from_millis(100));
+                let conf = get_conf().unwrap();
+
+                for stdout_fd in &conf.stdout_fds {
+                    unsafe {
+                        debug(format!("closing {}", *stdout_fd));
+                        libc::close(*stdout_fd);
+                    }
+                }
+
+                if !conf.is_main_thread() {
+                    return;
+                }
+
+                unsafe {
+                    STDOUT_STREAM_THREAD.take().unwrap().join().unwrap();
+                }
             }
+
             libc::atexit(wait_for_output);
         }
 

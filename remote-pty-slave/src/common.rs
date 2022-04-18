@@ -41,8 +41,7 @@ where
     // the calls as libraries as it will interfere with the channel
     // on the main thread, potentially creating/stealing messages causing 
     // deadlocks
-    #[cfg(target_os = "linux")]
-    if conf.thread_id != unsafe { libc::gettid() } as _ {
+    if !conf.is_main_thread() {
         debug("called on non-main thread, not intercepting");
         return fallback_cb();
     }
