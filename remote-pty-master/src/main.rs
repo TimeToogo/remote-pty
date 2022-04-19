@@ -70,7 +70,7 @@ fn main() {
 
             // TODO: implement proper thread synchronisation and clean up with process control
             // currently threads from child processes are racing to read stdin causing inconsistent
-            // behaviour, with threads for dead children reading stdin and getting SIGPIPE when trying
+            // behavior, with threads for dead children reading stdin and getting SIGPIPE when trying
             // to forward to remote
             let stdin = {
                 let mut chan = chan.clone();
