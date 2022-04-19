@@ -6,7 +6,7 @@ use remote_pty_common::{
     proto::master::{IoError, PtyMasterCall, PtyMasterResponse},
 };
 
-use crate::{channel::get_remote_channel, conf::get_conf};
+use crate::{channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd};
 
 #[cfg(target_os = "linux")]
 #[link(name = "c")]
@@ -43,7 +43,7 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
         };
 
         // override existing stdin fd with a pipe and keep the write end
-        let mut stdin = unsafe {
+        let (mut stdin, inode) = unsafe {
             let mut fds = [0 as libc::c_int; 2];
 
             #[cfg(target_os = "linux")]
@@ -61,21 +61,24 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
                 return;
             }
 
-            // disable input buffering
             #[cfg(target_os = "linux")]
-            libc::setvbuf(
-                LIBC_STDIN,
-                std::ptr::null::<libc::c_char>() as *mut _,
-                libc::_IONBF,
-                0,
-            );
+            {
+                use crate::fd::disable_input_buffering;
+                let _ = disable_input_buffering(LIBC_STDIN);
+            }
 
-            File::from_raw_fd(write_fd)
+            let inode = match get_inode_from_fd(write_fd) {
+                Ok(inode) => inode,
+                Err(_) => return,
+            };
+
+            (File::from_raw_fd(write_fd), inode)
         };
 
-        // TODO: get inode of pipes and store in config
-        // use inodes to check if functions should be intercepted
-        // instead of fd's
+        // capture inode of stdin pipe
+        conf.update_state(|state| {
+            let _ = state.stdin_inode.insert(inode);
+        });
 
         // stream remote master data to stdin
         thread::spawn(move || loop {

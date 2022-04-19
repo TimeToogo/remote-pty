@@ -113,16 +113,12 @@ impl RemoteChannel {
         let data = bincode::encode_to_vec(msg, self.conf)
             .map_err(|e| format!("failed to encode message: {}", e))?;
 
-        debug("acquire");
         let mut writer = self.writer.lock().unwrap();
-        debug("locked");
         writer
             .write_all(data.as_slice())
             .map_err(|e| format!("failed to send req: {}", e))?;
-        debug("written");
 
         writer.flush().map_err(|e| format!("failed to flush: {}", e))?;
-        debug("sent message");
 
         Ok(())
     }

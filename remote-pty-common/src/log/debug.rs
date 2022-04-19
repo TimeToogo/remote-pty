@@ -5,12 +5,12 @@ where
     T: Into<String>,
 {
     let debug = env::var("RPTY_DEBUG");
-    if debug.is_ok() {
+    if let Ok(f) = debug {
         let mut f = OpenOptions::new()
             .write(true)
             .append(true)
             .create(true)
-            .open(debug.unwrap())
+            .open(f)
             .unwrap();
         writeln!(f, "RPTY_DEBUG: {}", msg.into()).unwrap();
     }

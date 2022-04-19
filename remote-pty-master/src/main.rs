@@ -54,7 +54,7 @@ fn main() {
                         fd: _,
                         typ: PtySlaveCallType::RegisterProcess(req),
                     } => req,
-                    req @ _ => {
+                    req => {
                         debug(format!("unexpected req: {:?}", req));
                         return PtySlaveResponse::Error(TcError::EIO);
                     }
@@ -83,13 +83,12 @@ fn main() {
                             break;
                         }
 
-                        let res = chan
-                            .send::<PtyMasterCall, PtyMasterResponse>(
-                                Channel::STDIN,
-                                PtyMasterCall::WriteStdin(WriteStdinCall {
-                                    data: buf[..n].to_vec(),
-                                }),
-                            );
+                        let res = chan.send::<PtyMasterCall, PtyMasterResponse>(
+                            Channel::STDIN,
+                            PtyMasterCall::WriteStdin(WriteStdinCall {
+                                data: buf[..n].to_vec(),
+                            }),
+                        );
 
                         if res.is_err() {
                             return Ok(());
@@ -109,21 +108,24 @@ fn main() {
                 let mut chan = chan.clone();
                 thread::spawn(move || -> Result<()> {
                     loop {
-                        let res = chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::STDOUT, |req| {
-                            let req = match req {
-                                PtySlaveCall {
-                                    fd: _,
-                                    typ: PtySlaveCallType::WriteStdout(req),
-                                } => req,
-                                _ => panic!("unexpected request"),
-                            };
+                        let res = chan.receive::<PtySlaveCall, PtySlaveResponse, _>(
+                            Channel::STDOUT,
+                            |req| {
+                                let req = match req {
+                                    PtySlaveCall {
+                                        fd: _,
+                                        typ: PtySlaveCallType::WriteStdout(req),
+                                    } => req,
+                                    _ => panic!("unexpected request"),
+                                };
 
-                            io::stdout().write_all(req.data.as_slice()).unwrap();
-                            io::stdout().flush().unwrap();
+                                io::stdout().write_all(req.data.as_slice()).unwrap();
+                                io::stdout().flush().unwrap();
 
-                            PtySlaveResponse::Success(0)
-                        });
-                        
+                                PtySlaveResponse::Success(0)
+                            },
+                        );
+
                         if res.is_err() {
                             return Ok(());
                         }
@@ -135,10 +137,11 @@ fn main() {
                 let mut chan = chan.clone();
                 thread::spawn(move || -> Result<()> {
                     loop {
-                        let res = chan.receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
-                            RemotePtyServer::handle(&ctx, req)
-                        });
-                    
+                        let res = chan
+                            .receive::<PtySlaveCall, PtySlaveResponse, _>(Channel::PTY, |req| {
+                                RemotePtyServer::handle(&ctx, req)
+                            });
+
                         if res.is_err() {
                             return Ok(());
                         }
@@ -173,11 +176,10 @@ fn main() {
                             };
                             debug(format!("received signal: {:?}", sig));
 
-                            let res = chan
-                                .send::<PtyMasterCall, PtyMasterResponse>(
-                                    Channel::SIGNAL,
-                                    PtyMasterCall::Signal(sig),
-                                );
+                            let res = chan.send::<PtyMasterCall, PtyMasterResponse>(
+                                Channel::SIGNAL,
+                                PtyMasterCall::Signal(sig),
+                            );
 
                             if res.is_err() {
                                 return Ok(());

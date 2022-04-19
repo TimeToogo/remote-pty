@@ -1,10 +1,13 @@
 use std::{
+    borrow::BorrowMut,
     env,
     num::ParseIntError,
-    sync::{Arc, Mutex}, 
+    sync::{Arc, Mutex},
 };
 
 use lazy_static::lazy_static;
+
+use crate::fd::get_inode_from_fd;
 
 pub struct Conf {
     // the path of the unix socket to send pty requests
@@ -13,10 +16,20 @@ pub struct Conf {
     pub stdin_fd: i32,
     // stdout fds
     pub stdout_fds: Vec<i32>,
-    // extra fds to intercept pty calls
-    pub pty_fds: Vec<i32>,
     // original thread id
-    pub thread_id: i64
+    pub thread_id: i64,
+    // mutable state
+    pub state: Mutex<State>,
+}
+
+pub struct State {
+    // we store the inode numbers of the stdio fd's
+    // so we can determine if fd's reference the same pipe after duping
+
+    // stdin inode
+    pub stdin_inode: Option<u64>,
+    // stdout inode's
+    pub stdout_inode: Option<u64>,
 }
 
 impl Conf {
@@ -26,44 +39,63 @@ impl Conf {
                 .map_err(|_| "could not find env var RPTY_SOCK_PATH")?,
             //
             stdin_fd: env::var("RPTY_STDIN")
-                .map_err(|_| "could not find env var RPTY_STDIN")?
+                .unwrap_or_else(|_| "0".to_string())
                 .parse::<i32>()
                 .map_err(|_| "failed to number in RPTY_STDIN")?,
             //
             stdout_fds: env::var("RPTY_STDOUT")
-                .map_err(|_| "could not find env var RPTY_STDOUT")?
+                .unwrap_or_else(|_| "1,2".to_string())
                 .split(',')
                 .map(|i| i.parse::<i32>())
                 .collect::<Result<Vec<i32>, ParseIntError>>()
                 .map_err(|_| "failed to parse numbers in RPTY_STDOUT")?,
-            pty_fds: if env::var("RPTY_EXTRA").is_ok() {
-                env::var("RPTY_EXTRA")
-                    .unwrap()
-                    .split(',')
-                    .map(|i| i.parse::<i32>())
-                    .collect::<Result<Vec<i32>, ParseIntError>>()
-                    .map_err(|_| "failed to parse numbers in RPTY_EXTRA")?
-            } else {
-                vec![]
-            },
+
             //
             #[cfg(target_os = "linux")]
             thread_id: unsafe { libc::gettid() } as _,
             #[cfg(not(target_os = "linux"))]
-            thread_id: 0, // not implemented 
+            thread_id: 0, // not implemented
+            //
+            state: Mutex::new(State::new()),
         })
     }
 
+    pub(crate) fn is_stdio_fd(&self, fd: i32) -> bool {
+        self.stdin_fd == fd || self.stdout_fds.contains(&fd)
+    }
+
+    // checks if the supplied fd is referencing one of the pipes
+    // replacing stdio
     pub(crate) fn is_pty_fd(&self, fd: i32) -> bool {
-        self.stdin_fd == fd || self.stdout_fds.contains(&fd) || self.pty_fds.contains(&fd)
+        let inode = match get_inode_from_fd(fd) {
+            Ok(inode) => inode,
+            Err(_) => return false,
+        };
+
+        let state = self.state.lock().unwrap();
+        state.stdin_inode == Some(inode) || state.stdout_inode == Some(inode)
     }
 
     pub(crate) fn is_main_thread(&self) -> bool {
         #[cfg(target_os = "linux")]
         return self.thread_id == unsafe { libc::gettid() } as _;
-        
-        #[cfg(all(test, not(target_os = "linux")))]
+
+        #[cfg(not(target_os = "linux"))]
         return true;
+    }
+
+    pub(crate) fn update_state(&self, f: impl FnOnce(&mut State)) {
+        let mut state = self.state.lock().unwrap();
+        f(state.borrow_mut());
+    }
+}
+
+impl State {
+    pub(crate) fn new() -> Self {
+        Self {
+            stdin_inode: None,
+            stdout_inode: None,
+        }
     }
 }
 

@@ -14,7 +14,7 @@ use remote_pty_common::{
     },
 };
 
-use crate::{channel::get_remote_channel, conf::get_conf};
+use crate::{channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd};
 
 #[cfg(target_os = "linux")]
 #[link(name = "c")]
@@ -56,7 +56,7 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
         };
 
         // override existing stdout fd's with a pipe and keep the read end
-        let mut stdout = unsafe {
+        let (mut stdout, inode) = unsafe {
             let mut fds = [0 as libc::c_int; 2];
 
             #[cfg(target_os = "linux")]
@@ -79,29 +79,31 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             }
 
             if !conf.stdout_fds.contains(&write_fd) {
-                        debug(format!("closing {}", write_fd));
+                debug(format!("closing {}", write_fd));
                 libc::close(write_fd);
             }
 
             // disable output buffering
             #[cfg(target_os = "linux")]
             {
-                libc::setvbuf(
-                    LIBC_STDOUT,
-                    std::ptr::null::<libc::c_char>() as *mut _,
-                    libc::_IONBF,
-                    0,
-                );
-                libc::setvbuf(
-                    LIBC_STDERR,
-                    std::ptr::null::<libc::c_char>() as *mut _,
-                    libc::_IONBF,
-                    0,
-                );
+                use crate::fd::disable_input_buffering;
+
+                let _ = disable_input_buffering(LIBC_STDOUT);
+                let _ = disable_input_buffering(LIBC_STDERR);
             }
 
-            File::from_raw_fd(read_fd)
+            let inode = match get_inode_from_fd(read_fd) {
+                Ok(inode) => inode,
+                Err(_) => return,
+            };
+
+            (File::from_raw_fd(read_fd), inode)
         };
+
+        // capture inode of stdout pipe
+        conf.update_state(|state| {
+            let _ = state.stdout_inode.insert(inode);
+        });
 
         // stream remote master data to stdin
         let _stream_thread = thread::spawn(move || {
@@ -151,7 +153,13 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             let _ = STDOUT_STREAM_THREAD.insert(_stream_thread);
 
             extern "C" fn wait_for_output() {
-                let conf = get_conf().unwrap();
+                let conf = match get_conf() {
+                    Ok(conf) => conf,
+                    Err(err) => {
+                        debug(format!("failed to get conf: {}", err));
+                        return;
+                    }
+                };
 
                 for stdout_fd in &conf.stdout_fds {
                     unsafe {
@@ -165,7 +173,18 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                 }
 
                 unsafe {
-                    STDOUT_STREAM_THREAD.take().unwrap().join().unwrap();
+                    // todo: timeout
+                    let thread = match STDOUT_STREAM_THREAD.take() {
+                        Some(t) => t,
+                        None => {
+                            debug("failed to get stdout thread");
+                            return;
+                        }
+                    };
+
+                    thread.join().unwrap_or_else(|err| {
+                        debug(format!("could not join stdout: {:?}", err))
+                    });
                 }
             }
 

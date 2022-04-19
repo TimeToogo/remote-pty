@@ -1,6 +1,7 @@
 pub mod channel;
 pub mod conf;
 pub mod common;
+pub mod fd;
 pub mod error;
 pub mod intercept;
 pub mod stdin;

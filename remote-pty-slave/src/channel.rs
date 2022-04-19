@@ -48,7 +48,7 @@ fn ensure_not_stdio_fd<T: AsRawFd + FromRawFd>(conf: &Conf, transport: T) -> Res
     let fd = transport.as_raw_fd();
     let mut new_fd = 255;
 
-    while conf.is_pty_fd(new_fd) || is_fd_taken(new_fd) {
+    while conf.is_stdio_fd(fd) || is_fd_taken(new_fd) {
         new_fd -= 1;
 
         if new_fd == 0 {
@@ -77,11 +77,11 @@ fn is_fd_taken(fd: libc::c_int) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use std::{os::unix::net::UnixListener, thread};
+    use std::{os::unix::net::UnixListener, sync::Mutex};
 
     use crate::{
         channel::{get_remote_channel, GLOBAL_CHANNEL},
-        conf::Conf,
+        conf::{Conf, State},
     };
 
     #[test]
@@ -97,8 +97,8 @@ mod tests {
             sock_path: sock_path.to_string(),
             stdin_fd: 0,
             stdout_fds: vec![],
-            pty_fds: vec![],
-            thread_id: 1
+            thread_id: 1,
+            state: Mutex::new(State::new())
         };
 
         let _chan = get_remote_channel(&conf).unwrap();
