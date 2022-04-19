@@ -8,7 +8,7 @@ pub struct Context {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TerminalState {
-    pub pgrp: i32
+    pub pgrp: Option<u32>
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -58,7 +58,7 @@ impl Context {
 impl TerminalState {
     pub fn new() -> Self {
         Self {
-            pgrp: 99999
+            pgrp: None
         }
     }
 }

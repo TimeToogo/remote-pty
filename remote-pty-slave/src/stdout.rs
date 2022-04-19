@@ -79,7 +79,6 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
             }
 
             if !conf.stdout_fds.contains(&write_fd) {
-                debug(format!("closing {}", write_fd));
                 libc::close(write_fd);
             }
 
@@ -163,7 +162,6 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
 
                 for stdout_fd in &conf.stdout_fds {
                     unsafe {
-                        debug(format!("closing {}", *stdout_fd));
                         libc::close(*stdout_fd);
                     }
                 }

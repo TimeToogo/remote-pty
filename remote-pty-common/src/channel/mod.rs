@@ -75,11 +75,18 @@ impl RemoteChannel {
         Res: Encode + Decode + Debug,
         F: FnOnce(Req) -> Res,
     {
-        let req = self.read_msg(chan, MessageMode::Request)?;
+        let req = self.receive_request::<Req>(chan)?;
         let res = handler(req);
-        self.write_msg(chan, MessageMode::Response, res)?;
+        self.send_response(chan, res)?;
 
         Ok(())
+    }
+
+    pub fn receive_request<Req>(&mut self, chan: Channel) -> Result<Req, String>
+    where
+        Req: Encode + Decode + Debug,
+    {
+        self.read_msg(chan, MessageMode::Request)
     }
 
     // makes an synchronous RPC style call to the remote
@@ -94,6 +101,14 @@ impl RemoteChannel {
 
         Ok(res)
     }
+
+    pub fn send_response<Res>(&mut self, chan: Channel, res: Res) -> Result<(), String>
+    where
+        Res: Encode + Decode + Debug,
+    {
+        self.write_msg(chan, MessageMode::Response, res)
+    }
+
 
     // serialise and write the request to the underlying transport
     fn write_msg<Req>(&mut self, chan: Channel, mode: MessageMode, req: Req) -> Result<(), String>

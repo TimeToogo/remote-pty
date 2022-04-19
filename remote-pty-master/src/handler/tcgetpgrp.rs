@@ -1,6 +1,7 @@
-use remote_pty_common::{proto::{
-    slave::{PtySlaveResponse, ProcGroupResponse},
-}, log::debug};
+use remote_pty_common::{
+    log::debug,
+    proto::slave::{ProcGroupResponse, PtySlaveResponse},
+};
 
 use crate::context::Context;
 
@@ -8,15 +9,20 @@ use crate::context::Context;
 pub fn handle_tcgetpgrp(ctx: &Context) -> PtySlaveResponse {
     let state = ctx.state.lock().expect("failed to lock terminal state");
 
-    debug(format!("returned current pgrp {}", (*state).pgrp));
-    PtySlaveResponse::GetProcGroup(ProcGroupResponse {
-        pid: (*state).pgrp as _
-    })
+    // @see https://man7.org/linux/man-pages/man3/tcsetpgrp.3.html
+    // hacky: when there is no foreground process group tcgetpgrp
+    // will return a positive number that isn't a valid process group id
+    // we do our best here
+    let pid = (*state).pgrp.unwrap_or(99999) as _;
+
+    debug(format!("returned current pgrp {}", pid));
+
+    PtySlaveResponse::GetProcGroup(ProcGroupResponse { pid })
 }
 
 #[cfg(test)]
 mod tests {
-    use remote_pty_common::proto::slave::{PtySlaveResponse};
+    use remote_pty_common::proto::slave::PtySlaveResponse;
 
     use crate::{context::Context, handler::handle_tcgetpgrp};
 
@@ -25,7 +31,7 @@ mod tests {
         let ctx = Context::openpty().unwrap();
         {
             let mut state = ctx.state.lock().unwrap();
-            state.pgrp = 123;
+            state.pgrp = Some(123);
         }
         let ret = handle_tcgetpgrp(&ctx);
 

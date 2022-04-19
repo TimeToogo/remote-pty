@@ -110,6 +110,26 @@ pub struct WriteStdoutCall {
     pub data: Vec<u8>
 }
 
+impl PtySlaveCallType {
+    // determines if the calling process must be in the foreground
+    // to perform this call
+    pub fn must_be_foreground(&self) -> bool {
+        match self {
+            Self::GetAttr => true,
+            Self::SetAttr(_) => true,
+            Self::Drain => true,
+            Self::Flow(_) => true,
+            Self::Flush(_) => true,
+            Self::SendBreak(_) => true,
+            Self::SetWinSize(_) => true,
+            Self::Ioctl(_) => true,
+            Self::SetProgGroup(_) => true,
+            Self::WriteStdout(_) => true,
+            _ => false
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::proto::{slave::{PtySlaveCall, PtySlaveCallType}, Fd};

@@ -32,9 +32,9 @@ use remote_pty_common::{
 
 use crate::context::Context;
 
-pub struct RemotePtyServer;
+pub struct RemotePtyHandlers;
 
-impl RemotePtyServer {
+impl RemotePtyHandlers {
     pub fn handle(ctx: &Context, req: PtySlaveCall) -> PtySlaveResponse {
         let res = match req.typ {
             PtySlaveCallType::RegisterProcess(_) => todo!(),

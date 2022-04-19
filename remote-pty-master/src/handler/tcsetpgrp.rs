@@ -5,7 +5,7 @@ use crate::context::Context;
 // since the process groups are remote we mock pgrp behaviour
 pub fn handle_tcsetpgrp(ctx: &Context, req: SetProcGroupCall) -> PtySlaveResponse {
     let mut state = ctx.state.lock().expect("failed to lock terminal state");
-    (*state).pgrp = req.pid as _;
+    let _ = (*state).pgrp.insert(req.pid as _);
 
     debug(format!("set pgrp to {}", req.pid));
     PtySlaveResponse::Success(0)
@@ -33,6 +33,6 @@ mod tests {
 
         assert_eq!(ret, 0);
         let state = ctx.state.lock().unwrap();
-        assert_eq!((*state).pgrp, 123);
+        assert_eq!((*state).pgrp, Some(123));
     }
 }
