@@ -82,6 +82,7 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
 
         // stream remote master data to stdin
         thread::spawn(move || loop {
+            // todo: block signals
             remote_channel
                 .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::STDIN, |req| {
                     let write = match req {

@@ -9,6 +9,6 @@ TODO:
 - [x] consolidate stdin/out/err through remote PTY channel
 - [x] shared library mode for child processes
 - [x] SIGWINCH|SIG* handling (requires listener on slave side)
-- [ ] process group control and SIGTTOU/SIGTTIN handling
+- [x] process group control and SIGTTOU/SIGTTIN handling
 - [x] filter pty by pipe inodes rather than fd numbers
 - [ ] auto extract shared lib and set LD_PRELOAD from static bash?

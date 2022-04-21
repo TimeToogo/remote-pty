@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 bincode = "2.0.0-rc.1"
 libc = "0.2.90"
+lazy_static = "1.4.0"
+rand = "0.8.3"
