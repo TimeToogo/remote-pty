@@ -2,7 +2,9 @@ use std::{
     fs::File,
     io::Read,
     os::unix::prelude::FromRawFd,
+    sync::mpsc::channel,
     thread::{self, JoinHandle},
+    time::Duration,
 };
 
 use remote_pty_common::{
@@ -170,19 +172,24 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                     return;
                 }
 
-                unsafe {
-                    // todo: timeout
-                    let thread = match STDOUT_STREAM_THREAD.take() {
-                        Some(t) => t,
-                        None => {
-                            debug("failed to get stdout thread");
-                            return;
-                        }
-                    };
+                let thread = match unsafe { STDOUT_STREAM_THREAD.take() } {
+                    Some(t) => t,
+                    None => {
+                        debug("failed to get stdout thread");
+                        return;
+                    }
+                };
 
-                    thread.join().unwrap_or_else(|err| {
-                        debug(format!("could not join stdout: {:?}", err))
-                    });
+                let (sender, receiver) = channel();
+                thread::spawn(move || {
+                    let _ = thread.join();
+                    let _ = sender.send(1);
+                });
+                let res = receiver.recv_timeout(Duration::from_secs(3));
+
+                match res {
+                    Ok(_) => {}
+                    Err(err) => debug(format!("could not join stdout: {:?}", err)),
                 }
             }
 

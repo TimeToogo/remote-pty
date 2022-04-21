@@ -448,7 +448,6 @@ mod tests {
 
             let handle = thread::spawn(move || {
                 let res = timeout(Duration::from_millis(timeout_duration), || {
-                    // thread::sleep(Duration::from_millis(sleep_duration));
                     perform_blocking_read(sleep_duration as _);
 
                     Ok(()) as Result<_>
