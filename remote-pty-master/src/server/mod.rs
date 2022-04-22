@@ -299,7 +299,7 @@ impl Server {
         // relinquish the foreground process slot if all terminated
         let mut ctx = self.ctx.state.lock().unwrap();
         if let Some(pgrp) = ctx.pgrp {
-            if self.clients.iter().any(|i| i.1.pgrp == pgrp) {
+            if !self.clients.iter().any(|i| i.1.pgrp == pgrp) {
                 ctx.pgrp = None;
             }
         }
