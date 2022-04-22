@@ -16,7 +16,10 @@ use remote_pty_common::{
     },
 };
 
-use crate::{channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd};
+use crate::{
+    channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd,
+    signal::block_signals_on_thread,
+};
 
 #[cfg(target_os = "linux")]
 #[link(name = "c")]
@@ -108,6 +111,8 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
 
         // stream remote master data to stdin
         let _stream_thread = thread::spawn(move || {
+            let _ = block_signals_on_thread();
+
             let mut buff = [0u8; 4096];
 
             loop {
@@ -162,6 +167,9 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                     }
                 };
 
+                // close known references to the stdout pipe
+                // TODO: this could be improved by iterating /proc/.../fd/
+                // and comparing the inode's to determine if the fd points to it
                 for stdout_fd in &conf.stdout_fds {
                     unsafe {
                         libc::close(*stdout_fd);
@@ -180,16 +188,22 @@ pub static REMOTE_PTY_INIT_STDOUT: extern "C" fn() = {
                     }
                 };
 
+                // it's very possible there are still open fd's to the write end
+                // of the stdout pipe at this point.
+                // if this is the case, the stdout thread join will run indefinitely.
+                // we construct a channel so we can signal when it completes
+                // but only give it a grace period of 3 seconds to do so.
+                // why 3 seconds? good question
                 let (sender, receiver) = channel();
                 thread::spawn(move || {
+                    let _ = block_signals_on_thread();
                     let _ = thread.join();
                     let _ = sender.send(1);
                 });
                 let res = receiver.recv_timeout(Duration::from_secs(3));
 
-                match res {
-                    Ok(_) => {}
-                    Err(err) => debug(format!("could not join stdout: {:?}", err)),
+                if let Err(err) = res {
+                    debug(format!("could not join stdout: {:?}", err));
                 }
             }
 

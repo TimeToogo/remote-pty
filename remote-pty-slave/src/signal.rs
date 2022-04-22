@@ -1,4 +1,4 @@
-use std::thread;
+use std::{io, mem::MaybeUninit, ptr, thread};
 
 use remote_pty_common::{
     channel::Channel,
@@ -35,44 +35,66 @@ pub static REMOTE_PTY_INIT_SIGNAL_HANDLER: extern "C" fn() = {
             }
         };
 
-        thread::spawn(move || loop {
-            remote_channel
-                .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::SIGNAL, |req| {
-                    let signal = match req {
-                        PtyMasterCall::Signal(sig) => sig,
-                        _ => {
-                            debug(format!("unexpected request: {:?}", req));
+        thread::spawn(move || {
+            let _ = block_signals_on_thread();
+            loop {
+                remote_channel
+                    .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::SIGNAL, |req| {
+                        let signal = match req {
+                            PtyMasterCall::Signal(sig) => sig,
+                            _ => {
+                                debug(format!("unexpected request: {:?}", req));
+                                return PtyMasterResponse::Error(IoError::EIO);
+                            }
+                        };
+
+                        debug(format!("received signal from master: {:?}", signal));
+
+                        let signal = match signal {
+                            PtyMasterSignal::SIGWINCH => libc::SIGWINCH,
+                            PtyMasterSignal::SIGINT => libc::SIGINT,
+                            PtyMasterSignal::SIGTERM => libc::SIGTERM,
+                            PtyMasterSignal::SIGCONT => libc::SIGCONT,
+                            PtyMasterSignal::SIGTTOU => libc::SIGTTOU,
+                            PtyMasterSignal::SIGTTIN => libc::SIGTTIN,
+                        };
+
+                        let ret = unsafe { libc::kill(libc::getpid(), signal) };
+
+                        if ret == -1 {
+                            debug(format!(
+                                "failed to send signal to local process: {}",
+                                errno::errno()
+                            ));
                             return PtyMasterResponse::Error(IoError::EIO);
                         }
-                    };
 
-                    debug(format!("received signal from master: {:?}", signal));
-
-                    let signal = match signal {
-                        PtyMasterSignal::SIGWINCH => libc::SIGWINCH,
-                        PtyMasterSignal::SIGINT => libc::SIGINT,
-                        PtyMasterSignal::SIGTERM => libc::SIGTERM,
-                        PtyMasterSignal::SIGCONT => libc::SIGCONT,
-                        PtyMasterSignal::SIGTTOU => libc::SIGTTOU,
-                        PtyMasterSignal::SIGTTIN => libc::SIGTTIN,
-                    };
-
-                    let ret = unsafe { libc::kill(libc::getpid(), signal) };
-
-                    if ret == -1 {
-                        debug(format!(
-                            "failed to send signal to local process: {}",
-                            errno::errno()
-                        ));
-                        return PtyMasterResponse::Error(IoError::EIO);
-                    }
-
-                    PtyMasterResponse::Success(0)
-                })
-                .unwrap();
+                        PtyMasterResponse::Success(0)
+                    })
+                    .unwrap();
+            }
         });
 
         debug("init signal handler");
     }
     remote_pty_init_signal_handler
 };
+
+// block all signals on this thread
+pub(crate) fn block_signals_on_thread() -> io::Result<()> {
+    unsafe {
+        let mut sigset = MaybeUninit::<libc::sigset_t>::zeroed().assume_init();
+
+        if libc::sigfillset(&mut sigset as *mut _) == -1 {
+            debug("failed to fill sigset");
+            return Err(io::Error::last_os_error());
+        }
+
+        if libc::pthread_sigmask(libc::SIG_SETMASK, &sigset as *const _, ptr::null_mut()) == -1 {
+            debug("failed to set thread sigmask");
+            return Err(io::Error::last_os_error());
+        }
+
+        Ok(())
+    }
+}

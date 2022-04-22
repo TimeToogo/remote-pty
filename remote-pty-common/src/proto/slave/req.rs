@@ -30,7 +30,7 @@ pub enum PtySlaveCallType {
     // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
     GetProcGroup,
     SetProgGroup(SetProcGroupCall),
-    WriteStdout(WriteStdoutCall)
+    WriteStdout(WriteStdoutCall),
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]

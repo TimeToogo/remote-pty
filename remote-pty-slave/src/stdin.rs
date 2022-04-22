@@ -6,7 +6,10 @@ use remote_pty_common::{
     proto::master::{IoError, PtyMasterCall, PtyMasterResponse},
 };
 
-use crate::{channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd};
+use crate::{
+    channel::get_remote_channel, conf::get_conf, fd::get_inode_from_fd,
+    signal::block_signals_on_thread,
+};
 
 #[cfg(target_os = "linux")]
 #[link(name = "c")]
@@ -81,28 +84,31 @@ pub static REMOTE_PTY_INIT_STDIN: extern "C" fn() = {
         });
 
         // stream remote master data to stdin
-        thread::spawn(move || loop {
-            // todo: block signals
-            remote_channel
-                .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::STDIN, |req| {
-                    let write = match req {
-                        PtyMasterCall::WriteStdin(write) => write,
-                        _ => return PtyMasterResponse::Error(IoError::EIO),
-                    };
+        thread::spawn(move || {
+            let _ = block_signals_on_thread();
 
-                    if let Err(err) = stdin.write_all(write.data.as_slice()) {
-                        debug(format!("failed to write to stdin: {}", err));
-                        return PtyMasterResponse::Error(IoError::EIO);
-                    }
+            loop {
+                remote_channel
+                    .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::STDIN, |req| {
+                        let write = match req {
+                            PtyMasterCall::WriteStdin(write) => write,
+                            _ => return PtyMasterResponse::Error(IoError::EIO),
+                        };
 
-                    if let Err(err) = stdin.flush() {
-                        debug(format!("failed to write to flush stdin: {}", err));
-                        return PtyMasterResponse::Error(IoError::EIO);
-                    }
+                        if let Err(err) = stdin.write_all(write.data.as_slice()) {
+                            debug(format!("failed to write to stdin: {}", err));
+                            return PtyMasterResponse::Error(IoError::EIO);
+                        }
 
-                    PtyMasterResponse::WriteSuccess
-                })
-                .unwrap();
+                        if let Err(err) = stdin.flush() {
+                            debug(format!("failed to write to flush stdin: {}", err));
+                            return PtyMasterResponse::Error(IoError::EIO);
+                        }
+
+                        PtyMasterResponse::WriteSuccess
+                    })
+                    .unwrap();
+            }
         });
 
         debug("init stdin");
