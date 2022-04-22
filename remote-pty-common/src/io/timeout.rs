@@ -54,11 +54,11 @@ where
     T: Debug,
     E: Debug,
 {
-    let tid = unsafe { libc::pthread_self() };
+    let tid = unsafe { libc::pthread_self() } as u64;
 
     // get the state for the current thread or set to 0 if
     // it is the first timeout
-    let orig_state = thread_state(tid, |s| s.load(Ordering::SeqCst));
+    let orig_state = thread_state(tid as _, |s| s.load(Ordering::SeqCst));
 
     // set the handler for SIGALRM
     // this will be restored when _sig_handler is dropped
@@ -191,7 +191,7 @@ impl Drop for SignalHandler {
 
 // our signal handler increments the thread's state value
 extern "C" fn signal_handler(_signum: libc::c_int) {
-    let tid = unsafe { libc::pthread_self() };
+    let tid = unsafe { libc::pthread_self() } as u64;
 
     thread_state(tid, |s| s.fetch_add(1, Ordering::SeqCst));
 }
@@ -340,7 +340,7 @@ impl TimeoutWorker {
                     // otherwise, the thread is no longer blocked on this op and we can safely ignore
                     if timeout.ts == cur_state {
                         // send the signal
-                        let res = libc::pthread_kill(timeout.tid, libc::SIGALRM);
+                        let res = libc::pthread_kill(timeout.tid as libc::pthread_t, libc::SIGALRM);
 
                         // the thread could have terminated already so we continue even
                         // if the kill fails
