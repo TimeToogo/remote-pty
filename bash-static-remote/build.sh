@@ -29,12 +29,19 @@
 set -e 
 set -o pipefail
 
-DIR=$(realpath $(dirname $0))
+# DIR=$(realpath $(dirname $0))
+SDIR=$(realpath $(dirname $0))
+DIR=/tmp/bash
+mkdir -p $DIR
+cd $DIR
 
 # load version info
 bash_version="5.1"
 bash_patch_level=16
 musl_version="1.2.3"
+kernel_headers_version="4.19.88-1"
+busybox_version="1.34.1"
+busybox_sha256="415fbd89e5344c96acf449d94a6f956dbed62e18e835fc83e064db33a34bd549"
 
 target="$1"
 arch="$2"
@@ -54,7 +61,7 @@ if [ -d build ]; then
   rm -rf build
 fi
 
-mkdir build # make build directory
+mkdir -p build # make build directory
 pushd build
 
 # pre-prepare gpg for verificaiton
@@ -65,8 +72,10 @@ export GNUPGHOME
 gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7C0135FB088AAF6C66C650B9BB5869F064EA74AB
 # public key for musl
 gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 836489290BB6B70F99FFDA0556BCDB593020450F
+# public key for busybox
+gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C9E9416F76E610DBD09D040F47B70C55ACC9965B
 
-# download tarballs
+# # download tarballs
 echo "= downloading bash"
 curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}.tar.gz
 curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}.tar.gz.sig
@@ -80,7 +89,7 @@ bash_patch_prefix=$(echo "bash${bash_version}" | sed -e 's/\.//g')
 for lvl in $(seq $bash_patch_level); do
     curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}-patches/"${bash_patch_prefix}"-"$(printf '%03d' "$lvl")"
     curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}-patches/"${bash_patch_prefix}"-"$(printf '%03d' "$lvl")".sig
-     gpg --batch --verify "${bash_patch_prefix}"-"$(printf '%03d' "$lvl")".sig "${bash_patch_prefix}"-"$(printf '%03d' "$lvl")"
+    gpg --batch --verify "${bash_patch_prefix}"-"$(printf '%03d' "$lvl")".sig "${bash_patch_prefix}"-"$(printf '%03d' "$lvl")"
 
     pushd bash-${bash_version}
     patch -p0 < ../"${bash_patch_prefix}"-"$(printf '%03d' "$lvl")"
@@ -107,25 +116,70 @@ else
 
   pushd musl-${musl_version}
   ./configure --prefix="${install_dir}" 
-  make install
+  make -j "$(nproc)" install
   popd # musl-${musl-version}
 
   echo "= setting CC to musl-gcc"
   export CC=${working_dir}/musl-install/bin/musl-gcc
+
+  echo "= downloading musl-compatible kernel headers"
+
+  curl -fL -o kernel-headers.tar.gz https://github.com/sabotage-linux/kernel-headers/archive/refs/tags/v$kernel_headers_version.tar.gz
+  mkdir -p ${working_dir}/kernel-headers/
+  tar -xf kernel-headers.tar.gz -C ${working_dir}/kernel-headers/ --strip-components 1
 fi
 
-export CFLAGS="-static"
+echo "= downloading busybox"
 
-export REMOTE_PTY_LIB="$DIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.linked.a"
+tarball="busybox-${busybox_version}.tar.bz2";
+curl -fL -o busybox.tar.bz2.sig "https://busybox.net/downloads/$tarball.sig";
+curl -fL -o busybox.tar.bz2 "https://busybox.net/downloads/$tarball";
+echo "$busybox_sha256 *busybox.tar.bz2" | sha256sum -c -;
+gpg --batch --verify busybox.tar.bz2.sig busybox.tar.bz2;
+rm -rf ./busybox
+mkdir -p ./busybox;
+tar -xf busybox.tar.bz2 -C ./busybox --strip-components 1;
+rm busybox.tar.bz2*
+
+echo "= building libbusybox"
+
+pushd busybox
+
+setConfs='
+  CONFIG_LAST_SUPPORTED_WCHAR=0
+  CONFIG_BUILD_LIBBUSYBOX=y
+  CONFIG_FEATURE_LIBBUSYBOX_STATIC=y
+  CONFIG_FEATURE_SHARED_BUSYBOX=y
+';
+
+make defconfig;
+
+for confV in $setConfs; do
+  conf="${confV%=*}";
+  sed -i \
+    -e "s!^$conf=.*\$!$confV!" \
+    -e "s!^# $conf is not set\$!$confV!" \
+    .config;
+  if ! grep -q "^$confV\$" .config; then
+    echo "$confV" >> .config;
+  fi;
+done;
+make oldconfig
+
+make CC="$CC" CFLAGS="$CFLAGS -I${working_dir}/kernel-headers/$arch/include/ -fPIC" -j "$(nproc)"
+popd
 
 echo "= building bash"
+
+REMOTE_PTY_LIB="$SDIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.linked.a"
+BUSYBOX_LIB="$DIR/build/busybox/0_lib/libbusybox.so.1.34.1_unstripped"
 
 pushd bash-${bash_version}
 autoconf -f
 # statically link against our remote-pty-slave library
 # overriding the musl tty functions
 LDFLAGS="-Wl,-zmuldefs -Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive" \
-  CFLAGS="$CFLAGS -Os" \
+  CFLAGS="$CFLAGS -static -Os" \
   ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
 make
 make tests
