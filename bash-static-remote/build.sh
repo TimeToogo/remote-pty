@@ -206,10 +206,10 @@ pushd bash-${bash_version}
 autoconf -f
 # statically link against our remote-pty-slave library
 # overriding the musl tty functions
-LDFLAGS="$BUSYBOX_LIB" \
+LDFLAGS="-Wl,-zmuldefs -Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive $BUSYBOX_LIB" \
   CFLAGS="$CFLAGS -static -Os" \
   ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
-make LDFLAGS="$BUSYBOX_LIB" CC="$CC"
+make CC="$CC"
 make tests
 popd # bash-${bash_version}
 
