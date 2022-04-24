@@ -29,9 +29,10 @@
 set -e 
 set -o pipefail
 
-# DIR=$(realpath $(dirname $0))
+DIR=$(realpath $(dirname $0))
+# DIR=/tmp/bash
 SDIR=$(realpath $(dirname $0))
-DIR=/tmp/bash
+
 mkdir -p $DIR
 cd $DIR
 
@@ -56,11 +57,6 @@ if [[ "$arch" == "" ]]; then
   exit 1
 fi
 
-if [ -d build ]; then
-  echo "= removing previous build directory"
-  rm -rf build
-fi
-
 mkdir -p build # make build directory
 pushd build
 
@@ -75,13 +71,14 @@ gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 836489290BB6B7
 # public key for busybox
 gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C9E9416F76E610DBD09D040F47B70C55ACC9965B
 
-# # download tarballs
+# download tarballs
 echo "= downloading bash"
 curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}.tar.gz
 curl -LO http://ftp.gnu.org/gnu/bash/bash-${bash_version}.tar.gz.sig
 gpg --batch --verify bash-${bash_version}.tar.gz.sig bash-${bash_version}.tar.gz
 
 echo "= extracting bash"
+rm -rf bash-${bash_version}
 tar -xf bash-${bash_version}.tar.gz
 
 echo "= patching bash"
@@ -95,6 +92,12 @@ for lvl in $(seq $bash_patch_level); do
     patch -p0 < ../"${bash_patch_prefix}"-"$(printf '%03d' "$lvl")"
     popd
 done
+
+# apply custom patches
+echo "= applying custom patches"
+pushd bash-${bash_version}
+patch -p1 < $SDIR/patches/bash-busybox-builtin.patch
+popd
 
 configure_args=()
 
@@ -141,15 +144,14 @@ mkdir -p ./busybox;
 tar -xf busybox.tar.bz2 -C ./busybox --strip-components 1;
 rm busybox.tar.bz2*
 
-echo "= building libbusybox"
-
 pushd busybox
+
+echo "= building libbusybox"
 
 setConfs='
   CONFIG_LAST_SUPPORTED_WCHAR=0
   CONFIG_BUILD_LIBBUSYBOX=y
   CONFIG_FEATURE_LIBBUSYBOX_STATIC=y
-  CONFIG_FEATURE_SHARED_BUSYBOX=y
 ';
 
 make defconfig;
@@ -166,22 +168,48 @@ for confV in $setConfs; do
 done;
 make oldconfig
 
+# inject script to build raw object file
+sed -i -e 's/^exit 0.*$/\#/' scripts/trylink
+echo '
+  echo "= building static lib to $sharedlib_dir/libbusybox.a"
+  $CC $CFLAGS $LDFLAGS \
+      -r -o "$sharedlib_dir/libbusybox.o" \
+      -fPIC -Wl,-static \
+      -Wl,--undefined=lbb_main \
+      $SORT_COMMON \
+      $SORT_SECTION \
+      $START_GROUP $A_FILES $END_GROUP \
+      $l_list \
+      `INFO_OPTS`
+
+  exit 0
+' >> scripts/trylink
+
 make CC="$CC" CFLAGS="$CFLAGS -I${working_dir}/kernel-headers/$arch/include/ -fPIC" -j "$(nproc)"
+
+# prefix defined symbols so we dont cause any conflicts  
+cp 0_lib/libbusybox.o 0_lib/libbusybox.prefixed.o
+nm 0_lib/libbusybox.o | \
+  grep -E ' ([a-tv-z]|[A-TV-Z]) ' | \
+  awk '{printf "%s bb_%s\n", $3, $3}' | \
+  sort | uniq > /tmp/bbsym.map
+objcopy --redefine-syms /tmp/bbsym.map 0_lib/libbusybox.prefixed.o
+
 popd
 
 echo "= building bash"
 
-REMOTE_PTY_LIB="$SDIR/../target/$arch-unknown-$target-musl/release/libremote_pty_slave.linked.a"
-BUSYBOX_LIB="$DIR/build/busybox/0_lib/libbusybox.so.1.34.1_unstripped"
+REMOTE_PTY_LIB="${CARGO_TARGET_DIR:-$SDIR/../target}/$arch-unknown-$target-musl/release/libremote_pty_slave.linked.a"
+BUSYBOX_LIB="$DIR/build/busybox/0_lib/libbusybox.prefixed.o"
 
 pushd bash-${bash_version}
 autoconf -f
 # statically link against our remote-pty-slave library
 # overriding the musl tty functions
-LDFLAGS="-Wl,-zmuldefs -Wl,--whole-archive $REMOTE_PTY_LIB -Wl,--no-whole-archive" \
+LDFLAGS="$BUSYBOX_LIB" \
   CFLAGS="$CFLAGS -static -Os" \
   ./configure --without-bash-malloc "${configure_args[@]}" || (cat config.log && exit 1)
-make
+make LDFLAGS="$BUSYBOX_LIB" CC="$CC"
 make tests
 popd # bash-${bash_version}
 

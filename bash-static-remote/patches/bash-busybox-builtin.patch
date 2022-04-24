@@ -1,0 +1,131 @@
+diff --git a/builtins/Makefile.in b/builtins/Makefile.in
+index b349e93c..8396f8fd 100644
+--- a/builtins/Makefile.in
++++ b/builtins/Makefile.in
+@@ -143,7 +143,8 @@ DEFSRC =  $(srcdir)/alias.def $(srcdir)/bind.def $(srcdir)/break.def \
+ 	  $(srcdir)/times.def $(srcdir)/trap.def $(srcdir)/type.def \
+ 	  $(srcdir)/ulimit.def $(srcdir)/umask.def $(srcdir)/wait.def \
+ 	  $(srcdir)/reserved.def $(srcdir)/pushd.def $(srcdir)/shopt.def \
+-	  $(srcdir)/printf.def $(srcdir)/complete.def $(srcdir)/mapfile.def
++	  $(srcdir)/printf.def $(srcdir)/complete.def $(srcdir)/mapfile.def \
++	  $(srcdir)/busybox.def
+ 
+ STATIC_SOURCE = common.c evalstring.c evalfile.c getopt.c bashgetopt.c \
+ 		getopt.h 
+@@ -155,7 +156,8 @@ OFILES = builtins.o \
+ 	jobs.o kill.o let.o mapfile.o \
+ 	pushd.o read.o return.o set.o setattr.o shift.o source.o \
+ 	suspend.o test.o times.o trap.o type.o ulimit.o umask.o \
+-	wait.o getopts.o shopt.o printf.o getopt.o bashgetopt.o complete.o
++	wait.o getopts.o shopt.o printf.o getopt.o bashgetopt.o complete.o \
++	busybox.o
+ 
+ CREATED_FILES = builtext.h builtins.c psize.aux pipesize.h tmpbuiltins.c \
+ 	tmpbuiltins.h
+@@ -707,3 +709,6 @@ suspend.o: ${topdir}/bashintl.h ${LIBINTL_H} $(BASHINCDIR)/gettext.h
+ type.o: ${topdir}/bashintl.h ${LIBINTL_H} $(BASHINCDIR)/gettext.h
+ ulimit.o: ${topdir}/bashintl.h ${LIBINTL_H} $(BASHINCDIR)/gettext.h
+ umask.o: ${topdir}/bashintl.h ${LIBINTL_H} $(BASHINCDIR)/gettext.h
++
++busybox.o: busybox.def $(topdir)/bashtypes.h $(topdir)/config.h \
++           $(topdir)/shell.h $(topdir)/array.h common.h
+\ No newline at end of file
+diff --git a/builtins/busybox.def b/builtins/busybox.def
+new file mode 100644
+index 00000000..5fd6c99a
+--- /dev/null
++++ b/builtins/busybox.def
+@@ -0,0 +1,79 @@
++This file is busybox.def, from which is created busybox.c.
++It implements the builtin "busybox" in Bash.
++
++Copyright (C) 1987-2009 Free Software Foundation, Inc.
++
++This file is part of GNU Bash, the Bourne Again SHell.
++
++Bash is free software: you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation, either version 3 of the License, or
++(at your option) any later version.
++
++Bash is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with Bash.  If not, see <http://www.gnu.org/licenses/>.
++
++$PRODUCES busybox.c
++
++$BUILTIN busybox
++$FUNCTION busybox_builtin
++$SHORT_DOC busybox
++Executes a busybox command
++$END
++
++$BUILTIN bb
++$FUNCTION busybox_builtin
++$SHORT_DOC bb
++Executes a busybox command
++$END
++
++#include <config.h>
++#include "../bashtypes.h"
++#include <stdio.h>
++#include <unistd.h>
++#include <sys/wait.h>
++#include "../shell.h"
++#include "../array.h"
++#include "common.h"
++
++// (prefixed) busybox entrypoint
++extern int bb_lbb_main(char **argv);
++
++int
++busybox_builtin (list)
++     WORD_LIST *list;
++{
++  ARRAY* arr = NULL; 
++  char** argv = NULL; 
++  char* argv_fallback[2] = {"busybox", 0};
++  pid_t pid;
++  int res;
++ 
++  arr = array_from_word_list(list);
++  array_shift_element(arr, "busybox");
++  argv = array_to_argv(arr, NULL);
++  
++  pid = fork();
++
++  if (pid < 0) {
++    printf("failed to fork\n");
++    res = 1;
++  } else if (pid == 0) {
++    setpgid(0, getpid());
++    give_terminal_to(getpid(), 0);
++    exit(bb_lbb_main(argv ? argv : (char**)argv_fallback));
++  } else {
++    waitpid(pid, &res, 0);
++    give_terminal_to(getpgid(0), 0);
++  }
++
++  array_dispose(arr);
++  strvec_dispose(argv);
++
++  return res;
++}
+\ No newline at end of file
+diff --git a/support/mkversion.sh b/support/mkversion.sh
+index 5960a425..7b0c8a9c 100755
+--- a/support/mkversion.sh
++++ b/support/mkversion.sh
+@@ -123,7 +123,7 @@ float_dist=${dist_major}.${dist_minor}
+ 
+ echo
+ echo "/* The distribution version number of this shell. */"
+-echo "#define DISTVERSION \"${float_dist}\""
++echo "#define DISTVERSION \"${float_dist}-rpty\""
+ 
+ # Output the patch level
+ #echo
