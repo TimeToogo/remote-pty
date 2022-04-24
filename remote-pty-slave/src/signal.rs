@@ -40,7 +40,7 @@ pub static REMOTE_PTY_INIT_SIGNAL_HANDLER: extern "C" fn() = {
             loop {
                 remote_channel
                     .receive::<PtyMasterCall, PtyMasterResponse, _>(Channel::SIGNAL, |req| {
-                        let signal = match req {
+                        let req = match req {
                             PtyMasterCall::Signal(sig) => sig,
                             _ => {
                                 debug(format!("unexpected request: {:?}", req));
@@ -48,9 +48,9 @@ pub static REMOTE_PTY_INIT_SIGNAL_HANDLER: extern "C" fn() = {
                             }
                         };
 
-                        debug(format!("received signal from master: {:?}", signal));
+                        debug(format!("received signal from master: {:?}", req));
 
-                        let signal = match signal {
+                        let signal = match req.signal {
                             PtyMasterSignal::SIGWINCH => libc::SIGWINCH,
                             PtyMasterSignal::SIGINT => libc::SIGINT,
                             PtyMasterSignal::SIGTERM => libc::SIGTERM,
@@ -59,7 +59,7 @@ pub static REMOTE_PTY_INIT_SIGNAL_HANDLER: extern "C" fn() = {
                             PtyMasterSignal::SIGTTIN => libc::SIGTTIN,
                         };
 
-                        let ret = unsafe { libc::kill(libc::getpid(), signal) };
+                        let ret = unsafe { libc::kill(req.pgrp as _, signal) };
 
                         if ret == -1 {
                             debug(format!(

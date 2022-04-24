@@ -49,7 +49,6 @@ impl Conf {
                 .map(|i| i.parse::<i32>())
                 .collect::<Result<Vec<i32>, ParseIntError>>()
                 .map_err(|_| "failed to parse numbers in RPTY_STDOUT")?,
-
             //
             #[cfg(target_os = "linux")]
             thread_id: unsafe { libc::gettid() } as _,

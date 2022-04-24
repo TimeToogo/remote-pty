@@ -19,7 +19,7 @@ use remote_pty_common::{
     channel::{Channel, RemoteChannel},
     log::debug,
     proto::{
-        master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall},
+        master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall, SignalCall},
         slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcError, WriteStdoutCall},
     },
 };
@@ -167,7 +167,7 @@ impl Server {
         }
     }
 
-    fn handle_signal(&self, sig: PtyMasterSignal) -> EventHandleResult {
+    fn handle_signal(&self, signal: PtyMasterSignal) -> EventHandleResult {
         let mut client = match self.get_active_client() {
             Some(c) => c,
             None => {
@@ -176,9 +176,17 @@ impl Server {
             }
         };
 
+        let pgrp = {
+            let state = self.ctx.state.lock().unwrap();
+            state.pgrp.unwrap_or(client.pgrp)
+        };
+
         let res = client
             .chan
-            .send::<PtyMasterCall, PtyMasterResponse>(Channel::SIGNAL, PtyMasterCall::Signal(sig));
+            .send::<PtyMasterCall, PtyMasterResponse>(Channel::SIGNAL, PtyMasterCall::Signal(SignalCall {
+                signal,
+                pgrp
+            }));
 
         match res {
             Ok(PtyMasterResponse::Success(_)) => EventHandleResult::Success,
@@ -218,7 +226,10 @@ impl Server {
 
             let _ = client.chan.send::<PtyMasterCall, PtyMasterResponse>(
                 Channel::SIGNAL,
-                PtyMasterCall::Signal(PtyMasterSignal::SIGTTOU),
+                PtyMasterCall::Signal(SignalCall {
+                    signal: PtyMasterSignal::SIGTTOU,
+                    pgrp: client.pgrp
+                }),
             );
             let _ = client
                 .chan

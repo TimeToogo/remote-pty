@@ -2,8 +2,14 @@ use bincode::{Decode, Encode};
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum PtyMasterCall {
-    Signal(PtyMasterSignal),
+    Signal(SignalCall),
     WriteStdin(WriteStdinCall),
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct SignalCall {
+    pub signal: PtyMasterSignal,
+    pub pgrp: u32
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]

@@ -109,7 +109,6 @@ impl RemoteChannel {
         self.write_msg(chan, MessageMode::Response, res)
     }
 
-
     // serialise and write the request to the underlying transport
     fn write_msg<Req>(&mut self, chan: Channel, mode: MessageMode, req: Req) -> Result<(), String>
     where
@@ -133,7 +132,9 @@ impl RemoteChannel {
             .write_all(data.as_slice())
             .map_err(|e| format!("failed to send req: {}", e))?;
 
-        writer.flush().map_err(|e| format!("failed to flush: {}", e))?;
+        writer
+            .flush()
+            .map_err(|e| format!("failed to flush: {}", e))?;
 
         Ok(())
     }
@@ -246,7 +247,9 @@ mod tests {
     use crate::{
         channel::{transport::mem::MemoryTransport, Channel, RemoteChannel},
         proto::{
-            master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall},
+            master::{
+                PtyMasterCall, PtyMasterResponse, PtyMasterSignal, SignalCall, WriteStdinCall,
+            },
             slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, WriteStdoutCall},
             Fd,
         },
@@ -359,7 +362,10 @@ mod tests {
                 let res = c1
                     .send::<PtyMasterCall, PtyMasterResponse>(
                         Channel::STDIN,
-                        PtyMasterCall::Signal(PtyMasterSignal::SIGCONT),
+                        PtyMasterCall::Signal(SignalCall {
+                            signal: PtyMasterSignal::SIGCONT,
+                            pgrp: 1,
+                        }),
                     )
                     .unwrap();
 
@@ -407,7 +413,13 @@ mod tests {
                 c2.receive::<PtyMasterCall, PtyMasterResponse, _>(
                     Channel::STDIN,
                     move |actual_req| {
-                        assert_eq!(actual_req, PtyMasterCall::Signal(PtyMasterSignal::SIGCONT));
+                        assert_eq!(
+                            actual_req,
+                            PtyMasterCall::Signal(SignalCall {
+                                signal: PtyMasterSignal::SIGCONT,
+                                pgrp: 1
+                            })
+                        );
 
                         PtyMasterResponse::Success(2)
                     },
