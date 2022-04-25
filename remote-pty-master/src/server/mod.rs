@@ -73,12 +73,12 @@ pub enum Event {
 }
 
 pub struct ClientEvent {
-    pub client: Client,
+    pub client_pid: u32,
     pub event: ClientEventType,
 }
 
 pub enum ClientEventType {
-    Registered,
+    Registered(Client),
     Call(PtySlaveCall),
     Terminated,
 }
@@ -86,7 +86,7 @@ pub enum ClientEventType {
 enum EventHandleResult {
     Success,
     ErrorIgnore,
-    ErrorTerminateClient(Client),
+    ErrorTerminateClient(u32),
     ErrorTerminateServer,
 }
 
@@ -197,13 +197,23 @@ impl Server {
     }
 
     fn handle_client_event(&mut self, cevt: ClientEvent) -> EventHandleResult {
-        let client = cevt.client;
+        if let ClientEventType::Registered(client) = cevt.event {
+            self.register_client(client);
+            return EventHandleResult::Success;
+        }
+
+        let client = match self.clients.get(&cevt.client_pid) {
+            Some(c) => c.clone(),
+            None => {
+                debug(format!(
+                    "could not find client with pid: {}",
+                    cevt.client_pid
+                ));
+                return EventHandleResult::ErrorIgnore;
+            }
+        };
 
         match cevt.event {
-            ClientEventType::Registered => {
-                self.register_client(client);
-                EventHandleResult::Success
-            }
             ClientEventType::Terminated => {
                 self.remove_client(client.pid);
                 EventHandleResult::Success
@@ -216,6 +226,7 @@ impl Server {
                 EventHandleResult::Success
             }
             ClientEventType::Call(req) => self.handle_pty_call(client, req),
+            ClientEventType::Registered(_) => unreachable!(),
         }
     }
 
@@ -284,7 +295,7 @@ impl Server {
             "received unexpected response from client {}: {:?}",
             client.pid, res
         ));
-        EventHandleResult::ErrorTerminateClient(client)
+        EventHandleResult::ErrorTerminateClient(client.pid)
     }
 
     fn client_error(&self, client: Client, err: String) -> EventHandleResult {
@@ -292,15 +303,15 @@ impl Server {
             "error while reading from channel for client {}: {}",
             client.pid, err
         ));
-        EventHandleResult::ErrorTerminateClient(client)
+        EventHandleResult::ErrorTerminateClient(client.pid)
     }
 
     fn handle_result(&mut self, res: EventHandleResult) {
         match res {
             EventHandleResult::Success => {}
             EventHandleResult::ErrorIgnore => {}
-            EventHandleResult::ErrorTerminateClient(client) => {
-                self.remove_client(client.pid);
+            EventHandleResult::ErrorTerminateClient(pid) => {
+                self.remove_client(pid);
             }
             EventHandleResult::ErrorTerminateServer => {
                 debug("terminating server");
@@ -335,8 +346,22 @@ impl Server {
             }
         }
 
-        ClientPtyListener::new(&client, Channel::PTY, &self.terminate, &self.sender).start();
-        ClientPtyListener::new(&client, Channel::STDOUT, &self.terminate, &self.sender).start();
+        ClientPtyListener::new(
+            client.pid,
+            client.chan.clone(),
+            Channel::PTY,
+            &self.terminate,
+            &self.sender,
+        )
+        .start();
+        ClientPtyListener::new(
+            client.pid,
+            client.chan.clone(),
+            Channel::STDOUT,
+            &self.terminate,
+            &self.sender,
+        )
+        .start();
         let _ = self.clients.insert(client.pid, client);
     }
 

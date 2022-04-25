@@ -79,12 +79,12 @@ impl Acceptor {
                 };
 
                 let res = sender.send(Event::ClientEvent(ClientEvent {
-                    client: Client {
+                    client_pid: req.pid,
+                    event: ClientEventType::Registered(Client {
                         chan: chan_send,
                         pgrp: req.pgrp,
                         pid: req.pid,
-                    },
-                    event: ClientEventType::Registered,
+                    }),
                 }));
 
                 match res {

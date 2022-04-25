@@ -32,10 +32,10 @@ index b349e93c..8396f8fd 100644
 \ No newline at end of file
 diff --git a/builtins/busybox.def b/builtins/busybox.def
 new file mode 100644
-index 00000000..5fd6c99a
+index 00000000..efa5819d
 --- /dev/null
 +++ b/builtins/busybox.def
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,106 @@
 +This file is busybox.def, from which is created busybox.c.
 +It implements the builtin "busybox" in Bash.
 +
@@ -70,10 +70,16 @@ index 00000000..5fd6c99a
 +Executes a busybox command
 +$END
 +
++#ifndef _GNU_SOURCE
++#  define _GNU_SOURCE 1
++#endif
++
 +#include <config.h>
 +#include "../bashtypes.h"
 +#include <stdio.h>
 +#include <unistd.h>
++#include <fcntl.h>
++#include <errno.h>
 +#include <sys/wait.h>
 +#include "../shell.h"
 +#include "../array.h"
@@ -89,12 +95,21 @@ index 00000000..5fd6c99a
 +  ARRAY* arr = NULL; 
 +  char** argv = NULL; 
 +  char* argv_fallback[2] = {"busybox", 0};
++  int pipefd[2];
++  char buf[1];
 +  pid_t pid;
 +  int res;
 + 
 +  arr = array_from_word_list(list);
 +  array_shift_element(arr, "busybox");
 +  argv = array_to_argv(arr, NULL);
++
++
++  if (pipe2(pipefd, O_CLOEXEC) == -1) {
++      printf("failed to create pipe\n");
++      res = 1;
++      goto cleanup;
++  }
 +  
 +  pid = fork();
 +
@@ -102,14 +117,26 @@ index 00000000..5fd6c99a
 +    printf("failed to fork\n");
 +    res = 1;
 +  } else if (pid == 0) {
-+    setpgid(0, getpid());
-+    give_terminal_to(getpid(), 0);
++    close(pipefd[1]);
++    // wait for parent to be ready
++    while(read(pipefd[1], buf, 1) > 0) {}
++
 +    exit(bb_lbb_main(argv ? argv : (char**)argv_fallback));
 +  } else {
++    close(pipefd[0]);
++    
++    // setup child and make foreground
++    setpgid(0, pid);
++    give_terminal_to(pid, 0);
++    // notify child that it's ready
++    write(pipefd[1], "1", 1);
++
++    // wait for child to complete
 +    waitpid(pid, &res, 0);
 +    give_terminal_to(getpgid(0), 0);
 +  }
 +
++cleanup:
 +  array_dispose(arr);
 +  strvec_dispose(argv);
 +

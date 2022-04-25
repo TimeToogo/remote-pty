@@ -7,27 +7,34 @@ use std::{
     thread,
 };
 
-use remote_pty_common::{channel::Channel, log::debug, proto::slave::PtySlaveCall};
+use remote_pty_common::{
+    channel::{Channel, RemoteChannel},
+    log::debug,
+    proto::slave::PtySlaveCall,
+};
 
-use super::{Client, ClientEvent, ClientEventType, Event};
+use super::{ClientEvent, ClientEventType, Event};
 
 pub(crate) struct ClientPtyListener {
-    client: Client,
-    channel: Channel,
+    client_pid: u32,
+    chan: RemoteChannel,
+    chan_type: Channel,
     terminate: Arc<AtomicBool>,
     sender: Sender<Event>,
 }
 
 impl ClientPtyListener {
     pub(crate) fn new(
-        client: &Client,
-        channel: Channel,
+        client_pid: u32,
+        chan: RemoteChannel,
+        chan_type: Channel,
         terminate: &Arc<AtomicBool>,
         sender: &Sender<Event>,
     ) -> Self {
         Self {
-            client: client.clone(),
-            channel,
+            client_pid,
+            chan,
+            chan_type,
             terminate: Arc::clone(terminate),
             sender: sender.clone(),
         }
@@ -39,10 +46,7 @@ impl ClientPtyListener {
 
     fn work(mut self) {
         while !self.terminate.load(Ordering::Relaxed) {
-            let req = self
-                .client
-                .chan
-                .receive_request::<PtySlaveCall>(self.channel);
+            let req = self.chan.receive_request::<PtySlaveCall>(self.chan_type);
 
             let req = match req {
                 Ok(r) => r,
@@ -56,7 +60,7 @@ impl ClientPtyListener {
             };
 
             let res = self.sender.send(Event::ClientEvent(ClientEvent {
-                client: self.client.clone(),
+                client_pid: self.client_pid,
                 event: ClientEventType::Call(req),
             }));
 
@@ -70,9 +74,9 @@ impl ClientPtyListener {
         }
 
         let _ = self.sender.send(Event::ClientEvent(ClientEvent {
-            client: self.client.clone(),
+            client_pid: self.client_pid,
             event: ClientEventType::Terminated,
         }));
-        debug(format!("terminating client {:?} listener", self.channel));
+        debug(format!("terminating client {:?} listener", self.chan_type));
     }
 }
