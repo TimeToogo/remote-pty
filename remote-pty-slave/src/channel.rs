@@ -6,7 +6,7 @@ use std::{
 use errno::set_errno;
 use lazy_static::lazy_static;
 
-use remote_pty_common::channel::{transport::rw::ReadWriteTransport, RemoteChannel};
+use remote_pty_common::{channel::{transport::rw::ReadWriteTransport, RemoteChannel}, log::debug};
 
 use crate::conf::Conf;
 
@@ -22,26 +22,33 @@ pub fn get_remote_channel(conf: &Conf) -> Result<RemoteChannel, String> {
         .map_err(|_| "failed to lock channel mutex")?;
 
     if chan.is_none() {
-        let orig_errno = errno::errno();
-        let transport = UnixStream::connect(&conf.sock_path);
-        set_errno(orig_errno);
-
-        if let Err(e) = transport {
-            return Err(format!("failed to connect to unix socket: {}", e));
-        }
-
-        let transport_read = ensure_not_stdio_fd(conf, transport.unwrap())?;
-        let transport_write = ensure_not_stdio_fd(
-            conf,
-            transport_read
-                .try_clone()
-                .map_err(|_| "failed to clone unix socket")?,
-        )?;
-        let transport = ReadWriteTransport::new(transport_read, transport_write);
-        let _ = chan.insert(RemoteChannel::new(transport));
+        let transport = init_transport(conf)?;
+        let new_chan = RemoteChannel::new(transport);
+        let _ = chan.insert(new_chan);
     }
 
     Ok(chan.as_ref().unwrap().clone())
+}
+
+fn init_transport(conf: &Conf) -> Result<ReadWriteTransport<UnixStream, UnixStream>, String> {
+    let orig_errno = errno::errno();
+    let transport = UnixStream::connect(&conf.sock_path);
+    set_errno(orig_errno);
+
+    if let Err(e) = transport {
+        return Err(format!("failed to connect to unix socket: {}", e));
+    }
+
+    let transport_read = ensure_not_stdio_fd(conf, transport.unwrap())?;
+    let transport_write = ensure_not_stdio_fd(
+        conf,
+        transport_read
+            .try_clone()
+            .map_err(|_| "failed to clone unix socket")?,
+    )?;
+    let transport = ReadWriteTransport::new(transport_read, transport_write);
+
+    Ok(transport)
 }
 
 fn ensure_not_stdio_fd<T: AsRawFd + FromRawFd>(conf: &Conf, transport: T) -> Result<T, String> {
@@ -75,6 +82,18 @@ fn is_fd_taken(fd: libc::c_int) -> bool {
     return unsafe { libc::fcntl(fd, libc::F_GETFL) } != -1 || errno::errno().0 != libc::EBADF;
 }
 
+pub(crate) fn close_remote_channel() -> Result<(), String> {
+    debug("closing remote channel");
+
+    let mut chan = GLOBAL_CHANNEL
+        .lock()
+        .map_err(|_| "failed to lock channel mutex")?;
+
+    let _ = chan.take();
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::{os::unix::net::UnixListener, sync::Mutex};
@@ -97,8 +116,7 @@ mod tests {
             sock_path: sock_path.to_string(),
             stdin_fd: 0,
             stdout_fds: vec![],
-            thread_id: 1,
-            state: Mutex::new(State::new())
+            state: Mutex::new(State::new()),
         };
 
         let _chan = get_remote_channel(&conf).unwrap();

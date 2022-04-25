@@ -6,6 +6,7 @@ use std::{
 };
 
 use lazy_static::lazy_static;
+use remote_pty_common::log::debug;
 
 use crate::fd::get_inode_from_fd;
 
@@ -16,8 +17,6 @@ pub struct Conf {
     pub stdin_fd: i32,
     // stdout fds
     pub stdout_fds: Vec<i32>,
-    // original thread id
-    pub thread_id: i64,
     // mutable state
     pub state: Mutex<State>,
 }
@@ -30,6 +29,8 @@ pub struct State {
     pub stdin_inode: Option<u64>,
     // stdout inode's
     pub stdout_inode: Option<u64>,
+    // main thread id
+    pub thread_id: i64,
 }
 
 impl Conf {
@@ -49,11 +50,6 @@ impl Conf {
                 .map(|i| i.parse::<i32>())
                 .collect::<Result<Vec<i32>, ParseIntError>>()
                 .map_err(|_| "failed to parse numbers in RPTY_STDOUT")?,
-            //
-            #[cfg(target_os = "linux")]
-            thread_id: unsafe { libc::gettid() } as _,
-            #[cfg(not(target_os = "linux"))]
-            thread_id: 0, // not implemented
             //
             state: Mutex::new(State::new()),
         })
@@ -76,8 +72,10 @@ impl Conf {
     }
 
     pub(crate) fn is_main_thread(&self) -> bool {
+        let state = self.state.lock().unwrap();
+
         #[cfg(target_os = "linux")]
-        return self.thread_id == unsafe { libc::gettid() } as _;
+        return state.thread_id == unsafe { libc::gettid() } as _;
 
         #[cfg(not(target_os = "linux"))]
         return true;
@@ -94,6 +92,11 @@ impl State {
         Self {
             stdin_inode: None,
             stdout_inode: None,
+            //
+            #[cfg(target_os = "linux")]
+            thread_id: unsafe { libc::gettid() } as _,
+            #[cfg(not(target_os = "linux"))]
+            thread_id: 0, // not implemented
         }
     }
 }
@@ -114,6 +117,32 @@ pub fn get_conf() -> Result<Arc<Conf>, &'static str> {
     }
 
     Ok(Arc::clone(conf.as_ref().unwrap()))
+}
+
+pub(crate) fn clear_conf() -> Result<(), String> {
+    debug("clear config");
+
+    let mut conf = GLOBAL_CONF
+        .lock()
+        .map_err(|_| "failed to lock conf mutex")?;
+
+    let _ = conf.take();
+    Ok(())
+
+    // let conf = match get_conf() {
+    //     Ok(c) => c,
+    //     Err(err) => {
+    //         debug(format!("atfork: failed to get conf {}", err));
+    //         return;
+    //     }
+    // };
+
+    // let thread_id = {
+    //     let mut state = conf.state.lock().unwrap();
+    //     state.thread_id = unsafe { libc::gettid() } as _;
+    //     state.thread_id
+    // };
+    // debug(format!("conf updated thread id to {}", thread_id));
 }
 
 #[cfg(test)]

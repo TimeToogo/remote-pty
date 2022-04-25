@@ -4,6 +4,8 @@ pub mod common;
 pub mod fd;
 pub mod error;
 pub mod intercept;
+pub mod init;
+pub mod fork;
 pub mod stdin;
 pub mod stdout;
 pub mod signal;
