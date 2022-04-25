@@ -17,8 +17,8 @@ use remote_pty_common::{
 };
 
 use crate::{
-    conf::{get_conf, Conf},
-    fd::get_inode_from_fd,
+    conf::{get_conf, Conf, State},
+    fd::{get_inode_from_fd, get_open_fds_by_inode},
     init::is_proc_forked,
     signal::block_signals_on_thread,
 };
@@ -36,8 +36,13 @@ extern "C" {
 static mut STDOUT_STREAM_THREAD: Option<JoinHandle<()>> = Option::None;
 
 // this replaces the stdout fd's with a fd which is streamed to the remote master
-pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel) {
+pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: Option<&State>) {
     debug("redirecting stdout");
+
+    let stdout_fds = pre_fork_state
+        .and_then(|s| s.stdout_inode)
+        .and_then(|inode| get_open_fds_by_inode(inode).ok())
+        .unwrap_or_else(|| conf.stdout_fds.clone());
 
     // override existing stdout fd's with a pipe and keep the read end
     let (mut stdout, inode) = unsafe {
@@ -55,14 +60,15 @@ pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel) {
 
         let (read_fd, write_fd) = (fds[0], fds[1]);
 
-        for stdout_fd in &conf.stdout_fds {
+        debug(format!("duping stdout to {:?} fds", stdout_fds));
+        for stdout_fd in &stdout_fds {
             if libc::dup2(write_fd, *stdout_fd as _) == -1 {
                 debug("failed to dup pipe to stdout");
                 return;
             }
         }
 
-        if !conf.stdout_fds.contains(&write_fd) {
+        if !stdout_fds.contains(&write_fd) {
             libc::close(write_fd);
         }
 

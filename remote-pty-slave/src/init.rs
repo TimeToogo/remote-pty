@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use remote_pty_common::log::debug;
 
 use crate::{
-    channel::get_remote_channel, conf::get_conf, fork::fork_handler, pgrp::register_process,
+    channel::get_remote_channel, conf::{get_conf, State}, fork::fork_handler, pgrp::register_process,
     signal::init_signal_handler, stdin::init_stdin, stdout::init_stdout,
 };
 
@@ -15,12 +15,16 @@ static INIT_COUNTER: AtomicU32 = AtomicU32::new(0);
 #[used]
 #[cfg_attr(all(target_os = "linux", not(test)), link_section = ".init_array")]
 #[no_mangle]
-pub static REMOTE_PTY_INIT: extern "C" fn() = remote_pty_init;
+pub static REMOTE_PTY_INIT: extern "C" fn() = remote_pty_init_startup;
 
 // initialisation function that executes on process startup
 #[cfg_attr(all(target_os = "linux", not(test)), link_section = ".text.startup")]
 #[no_mangle]
-pub extern "C" fn remote_pty_init() {
+pub extern "C" fn remote_pty_init_startup() {
+    remote_pty_init(None)
+}
+
+pub (crate) fn remote_pty_init(pre_fork_state: Option<State>) {
     debug("process init");
 
     INIT_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -49,8 +53,8 @@ pub extern "C" fn remote_pty_init() {
     }
 
     init_signal_handler(chan.clone());
-    init_stdin(&conf, chan.clone());
-    init_stdout(&conf, chan.clone());
+    init_stdin(&conf, chan.clone(), pre_fork_state.as_ref());
+    init_stdout(&conf, chan.clone(), pre_fork_state.as_ref());
 
     if !is_proc_forked() {
         unsafe {

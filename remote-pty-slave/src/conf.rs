@@ -21,6 +21,7 @@ pub struct Conf {
     pub state: Mutex<State>,
 }
 
+#[derive(Clone)]
 pub struct State {
     // we store the inode numbers of the stdio fd's
     // so we can determine if fd's reference the same pipe after duping
@@ -119,30 +120,15 @@ pub fn get_conf() -> Result<Arc<Conf>, &'static str> {
     Ok(Arc::clone(conf.as_ref().unwrap()))
 }
 
-pub(crate) fn clear_conf() -> Result<(), String> {
+pub(crate) fn clear_conf() -> Result<Option<State>, String> {
     debug("clear config");
 
     let mut conf = GLOBAL_CONF
         .lock()
         .map_err(|_| "failed to lock conf mutex")?;
 
-    let _ = conf.take();
-    Ok(())
-
-    // let conf = match get_conf() {
-    //     Ok(c) => c,
-    //     Err(err) => {
-    //         debug(format!("atfork: failed to get conf {}", err));
-    //         return;
-    //     }
-    // };
-
-    // let thread_id = {
-    //     let mut state = conf.state.lock().unwrap();
-    //     state.thread_id = unsafe { libc::gettid() } as _;
-    //     state.thread_id
-    // };
-    // debug(format!("conf updated thread id to {}", thread_id));
+    let conf = conf.take();
+    Ok(conf.and_then(|i| i.state.lock().ok().map(|s| s.clone())))
 }
 
 #[cfg(test)]

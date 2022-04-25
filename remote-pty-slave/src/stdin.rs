@@ -6,7 +6,11 @@ use remote_pty_common::{
     proto::master::{IoError, PtyMasterCall, PtyMasterResponse},
 };
 
-use crate::{conf::Conf, fd::get_inode_from_fd, signal::block_signals_on_thread};
+use crate::{
+    conf::{Conf, State},
+    fd::{get_inode_from_fd, get_open_fds_by_inode},
+    signal::block_signals_on_thread,
+};
 
 #[cfg(target_os = "linux")]
 #[link(name = "c")]
@@ -16,8 +20,13 @@ extern "C" {
 }
 
 // this replaces the stdin fd with a fd which is driven by the remote master
-pub(crate) fn init_stdin(conf: &Conf, mut chan: RemoteChannel) {
+pub(crate) fn init_stdin(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: Option<&State>) {
     debug("redirecting stdin");
+
+    let stdin_fds = pre_fork_state
+        .and_then(|s| s.stdin_inode)
+        .and_then(|inode| get_open_fds_by_inode(inode).ok())
+        .unwrap_or_else(|| vec![conf.stdin_fd]);
 
     // override existing stdin fd with a pipe and keep the write end
     let (mut stdin, inode) = unsafe {
@@ -33,9 +42,13 @@ pub(crate) fn init_stdin(conf: &Conf, mut chan: RemoteChannel) {
         }
 
         let (read_fd, write_fd) = (fds[0], fds[1]);
-        if libc::dup2(read_fd, conf.stdin_fd) == -1 {
-            debug("failed to dup pipe to stdin");
-            return;
+
+        debug(format!("duping stdin to {:?} fds", stdin_fds));
+        for stdin_fd in &stdin_fds {
+            if libc::dup2(read_fd, *stdin_fd) == -1 {
+                debug("failed to dup pipe to stdin");
+                return;
+            }
         }
 
         #[cfg(target_os = "linux")]

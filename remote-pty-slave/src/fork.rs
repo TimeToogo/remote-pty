@@ -11,12 +11,15 @@ pub extern "C" fn fork_handler() {
         return;
     }
 
-    if let Err(msg) = clear_conf() {
-        debug(format!("failed to clear conf: {}", msg));
-        return;
-    }
+    let pre_fork_state = match clear_conf() {
+        Ok(s) => s,
+        Err(msg) => {
+            debug(format!("failed to clear conf: {}", msg));
+            return;
+        }
+    };
 
-    remote_pty_init();
+    remote_pty_init(pre_fork_state);
 
     debug("fork complete");
 }
