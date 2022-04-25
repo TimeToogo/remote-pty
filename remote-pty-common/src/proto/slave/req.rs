@@ -12,6 +12,7 @@ pub struct PtySlaveCall {
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub enum PtySlaveCallType {
     RegisterProcess(RegisterProcessCall),
+    SetProcessGroup(SetProcessGroupCall),
     // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcgetattr.html
     GetAttr,
     SetAttr(TcSetAttrCall),
@@ -29,7 +30,7 @@ pub enum PtySlaveCallType {
     // equivalent to ioctl(fd, TIOCGPGRP, *pgrp)
     // @see https://man7.org/linux/man-pages/man3/tcgetpgrp.3.html
     GetProcGroup,
-    SetProgGroup(SetProcGroupCall),
+    SetProgGroup(TcSetProcGroupCall),
     WriteStdout(WriteStdoutCall),
 }
 
@@ -37,6 +38,12 @@ pub enum PtySlaveCallType {
 pub struct RegisterProcessCall {
     pub pid: u32,
     pub pgrp: u32,
+}
+
+#[derive(Encode, Decode, PartialEq, Debug, Clone)]
+pub struct SetProcessGroupCall {
+    pub pid: u32,
+    pub new_pgrp: u32,
 }
 
 // @see https://pubs.opengroup.org/onlinepubs/7908799/xsh/tcsetattr.html
@@ -101,7 +108,7 @@ pub enum IoctlCall {
 }
 
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
-pub struct SetProcGroupCall {
+pub struct TcSetProcGroupCall {
     pub pid: u32
 }
 

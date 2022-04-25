@@ -19,8 +19,11 @@ use remote_pty_common::{
     channel::{Channel, RemoteChannel},
     log::debug,
     proto::{
-        master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, WriteStdinCall, SignalCall},
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcError, WriteStdoutCall},
+        master::{PtyMasterCall, PtyMasterResponse, PtyMasterSignal, SignalCall, WriteStdinCall},
+        slave::{
+            PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcessGroupCall, TcError,
+            WriteStdoutCall,
+        },
     },
 };
 
@@ -181,12 +184,10 @@ impl Server {
             state.pgrp.unwrap_or(client.pgrp)
         };
 
-        let res = client
-            .chan
-            .send::<PtyMasterCall, PtyMasterResponse>(Channel::SIGNAL, PtyMasterCall::Signal(SignalCall {
-                signal,
-                pgrp
-            }));
+        let res = client.chan.send::<PtyMasterCall, PtyMasterResponse>(
+            Channel::SIGNAL,
+            PtyMasterCall::Signal(SignalCall { signal, pgrp }),
+        );
 
         match res {
             Ok(PtyMasterResponse::Success(_)) => EventHandleResult::Success,
@@ -205,6 +206,13 @@ impl Server {
             }
             ClientEventType::Terminated => {
                 self.remove_client(client.pid);
+                EventHandleResult::Success
+            }
+            ClientEventType::Call(PtySlaveCall {
+                typ: PtySlaveCallType::SetProcessGroup(req),
+                fd: _,
+            }) => {
+                self.handle_set_process_group(client, req);
                 EventHandleResult::Success
             }
             ClientEventType::Call(req) => self.handle_pty_call(client, req),
@@ -228,7 +236,7 @@ impl Server {
                 Channel::SIGNAL,
                 PtyMasterCall::Signal(SignalCall {
                     signal: PtyMasterSignal::SIGTTOU,
-                    pgrp: client.pgrp
+                    pgrp: client.pgrp,
                 }),
             );
             let _ = client
@@ -330,6 +338,29 @@ impl Server {
         ClientPtyListener::new(&client, Channel::PTY, &self.terminate, &self.sender).start();
         ClientPtyListener::new(&client, Channel::STDOUT, &self.terminate, &self.sender).start();
         let _ = self.clients.insert(client.pid, client);
+    }
+
+    fn handle_set_process_group(&mut self, mut client: Client, req: SetProcessGroupCall) {
+        let pid = if req.pid == 0 { client.pid } else { req.pid };
+        let pgrp = if req.new_pgrp == 0 {
+            client.pid
+        } else {
+            req.new_pgrp
+        };
+
+        debug(format!("setting process group of pid {} to {}", pid, pgrp));
+
+        let modified_client = self.clients.get_mut(&pid);
+
+        if let Some(modified_client) = modified_client {
+            modified_client.pgrp = pgrp;
+        } else {
+            debug("could not find client with pid");
+        }
+
+        let _ = client
+            .chan
+            .send_response(Channel::PTY, PtySlaveResponse::Success(0));
     }
 }
 

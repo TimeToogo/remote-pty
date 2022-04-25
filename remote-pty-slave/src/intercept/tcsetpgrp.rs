@@ -1,7 +1,7 @@
 use remote_pty_common::{
     channel::{Channel, RemoteChannel},
     proto::{
-        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
+        slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetProcGroupCall},
         Fd,
     },
 };
@@ -51,7 +51,7 @@ pub(crate) fn tcsetpgrp_chan(
     // send tcsetpgrp request to remote
     let req = PtySlaveCall {
         fd: Fd(fd),
-        typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: pgrp as _ }),
+        typ: PtySlaveCallType::SetProgGroup(TcSetProcGroupCall { pid: pgrp as _ }),
     };
 
     let res = match chan.send(Channel::PTY, req) {
@@ -71,7 +71,7 @@ mod tests {
     use remote_pty_common::{
         channel::{Channel, mock::MockChannel},
         proto::{
-            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, SetProcGroupCall},
+            slave::{PtySlaveCall, PtySlaveCallType, PtySlaveResponse, TcSetProcGroupCall},
             Fd,
         },
     };
@@ -82,7 +82,7 @@ mod tests {
     fn test_tcsetpgrp() {
         let expected_req = PtySlaveCall {
             fd: Fd(1),
-            typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: 123 }),
+            typ: PtySlaveCallType::SetProgGroup(TcSetProcGroupCall { pid: 123 }),
         };
         let mock_res = PtySlaveResponse::Success(0);
 

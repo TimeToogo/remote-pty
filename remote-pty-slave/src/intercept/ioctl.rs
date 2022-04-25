@@ -199,7 +199,7 @@ mod tests {
         proto::{
             slave::{
                 IoctlCall, IoctlResponse, IoctlValueResponse, ProcGroupResponse, PtySlaveCall,
-                PtySlaveCallType, PtySlaveResponse, SetProcGroupCall,
+                PtySlaveCallType, PtySlaveResponse, TcSetProcGroupCall,
             },
             Fd,
         },
@@ -341,7 +341,7 @@ mod tests {
     fn test_ioctl_tiocspgrp() {
         let expected_req = PtySlaveCall {
             fd: Fd(1),
-            typ: PtySlaveCallType::SetProgGroup(SetProcGroupCall { pid: 123 }),
+            typ: PtySlaveCallType::SetProgGroup(TcSetProcGroupCall { pid: 123 }),
         };
         let mock_res = PtySlaveResponse::Success(0);
 

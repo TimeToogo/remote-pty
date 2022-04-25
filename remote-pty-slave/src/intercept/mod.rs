@@ -24,3 +24,5 @@ mod tcgetpgrp;
 pub use tcgetpgrp::*;
 mod tcsetpgrp;
 pub use tcsetpgrp::*;
+mod setpgid;
+pub use setpgid::*;
