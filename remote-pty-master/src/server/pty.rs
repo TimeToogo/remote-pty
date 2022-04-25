@@ -52,8 +52,8 @@ impl ClientPtyListener {
                 Ok(r) => r,
                 Err(err) => {
                     debug(format!(
-                        "error while receiving pty message from client: {}",
-                        err
+                        "error while receiving pty message from client (pid: {}): {}",
+                        self.client_pid, err
                     ));
                     break;
                 }
@@ -73,10 +73,10 @@ impl ClientPtyListener {
             }
         }
 
-        let _ = self.sender.send(Event::ClientEvent(ClientEvent {
+        let res = self.sender.send(Event::ClientEvent(ClientEvent {
             client_pid: self.client_pid,
             event: ClientEventType::Terminated,
         }));
-        debug(format!("terminating client {:?} listener", self.chan_type));
+        debug(format!("terminating client {:?} listener: {:?}", self.chan_type, res));
     }
 }

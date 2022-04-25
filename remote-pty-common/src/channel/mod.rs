@@ -5,7 +5,9 @@ use std::{
     any::type_name,
     fmt::Debug,
     io,
-    sync::{Arc, Condvar, Mutex, MutexGuard},
+    sync::{mpsc::channel, Arc, Condvar, Mutex, MutexGuard},
+    thread,
+    time::Duration,
 };
 
 use bincode::{Decode, Encode};
@@ -102,6 +104,23 @@ impl RemoteChannel {
         Ok(res)
     }
 
+    pub fn timeout<F, R>(&mut self, timeout: Duration, op: F) -> Option<R>
+    where
+        F: FnOnce(&mut Self) -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        let mut chan = self.clone();
+        let (sender, receiver) = channel();
+
+        thread::spawn(move || {
+            let r = op(&mut chan);
+            let _ = sender.send(r);
+        });
+
+        let res = receiver.recv_timeout(timeout);
+        res.ok()
+    }
+
     pub fn send_response<Res>(&mut self, chan: Channel, res: Res) -> Result<(), String>
     where
         Res: Encode + Decode + Debug,
@@ -187,7 +206,16 @@ impl RemoteChannel {
                 let reader =
                     unsafe { std::mem::transmute::<_, MutexGuard<'static, dyn io::Read>>(reader) };
                 let msg = bincode::decode_from_std_read(&mut LockedMutexReader(reader), self.conf)
-                    .map_err(|e| format!("failed to decode err: {}", e))?;
+                    .map_err(|e| format!("failed to decode err: {}", e));
+
+                // if failed to read message notify other waiting threads
+                let msg = match msg {
+                    Ok(m) => m,
+                    Err(err) => {
+                        self.receiver.condvar.notify_all();
+                        return Err(err);
+                    }
+                };
 
                 let mut queue = self.receiver.queue.lock().unwrap();
                 queue.push(msg);
