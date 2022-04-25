@@ -9,4 +9,5 @@ pub mod unix_socket;
 pub mod tcp;
 pub mod mem;
 pub mod rw;
+pub mod conf;
 

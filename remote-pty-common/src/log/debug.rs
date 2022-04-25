@@ -12,6 +12,8 @@ where
             .create(true)
             .open(f)
             .unwrap();
-        writeln!(f, "RPTY_DEBUG: {}", msg.into()).unwrap();
+        let pid = unsafe { libc::getpid() };
+
+        writeln!(f, "RPTY_DEBUG ({}): {}", pid, msg.into()).unwrap();
     }
 }
