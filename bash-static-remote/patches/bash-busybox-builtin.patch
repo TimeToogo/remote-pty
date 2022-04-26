@@ -2158,9 +2158,9 @@ index 00000000..56121354
 +$END
 +
 +$BUILTIN zcip
-+$FUNCTION busybox_builtin_zci
-+$SHORT_DOC zci command
-+Executed busybox zci
++$FUNCTION busybox_builtin_zcip
++$SHORT_DOC zcip
++Executed busybox zcip command
 +$END
 +
 +#ifndef _GNU_SOURCE
