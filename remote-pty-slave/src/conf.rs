@@ -6,13 +6,13 @@ use std::{
 };
 
 use lazy_static::lazy_static;
-use remote_pty_common::log::debug;
+use remote_pty_common::{channel::transport::conf::TransportType, log::debug};
 
 use crate::fd::get_inode_from_fd;
 
 pub struct Conf {
     // the path of the unix socket to send pty requests
-    pub sock_path: String,
+    pub transport: TransportType,
     // stdin fd
     pub stdin_fd: i32,
     // stdout fds
@@ -35,22 +35,23 @@ pub struct State {
 }
 
 impl Conf {
-    fn from_env() -> Result<Self, &'static str> {
+    fn from_env() -> Result<Self, String> {
         Ok(Self {
-            sock_path: env::var("RPTY_SOCK_PATH")
-                .map_err(|_| "could not find env var RPTY_SOCK_PATH")?,
+            transport: env::var("RPTY_TRANSPORT")
+                .map_err(|_| "could not find env var RPTY_TRANSPORT")?
+                .parse::<TransportType>()?,
             //
             stdin_fd: env::var("RPTY_STDIN")
                 .unwrap_or_else(|_| "0".to_string())
                 .parse::<i32>()
-                .map_err(|_| "failed to number in RPTY_STDIN")?,
+                .map_err(|_| "failed to number in RPTY_STDIN".to_string())?,
             //
             stdout_fds: env::var("RPTY_STDOUT")
                 .unwrap_or_else(|_| "1,2".to_string())
                 .split(',')
                 .map(|i| i.parse::<i32>())
                 .collect::<Result<Vec<i32>, ParseIntError>>()
-                .map_err(|_| "failed to parse numbers in RPTY_STDOUT")?,
+                .map_err(|_| "failed to parse numbers in RPTY_STDOUT".to_string())?,
             //
             state: Mutex::new(State::new()),
         })
@@ -106,7 +107,7 @@ lazy_static! {
     static ref GLOBAL_CONF: Mutex<Option<Arc<Conf>>> = Mutex::new(Option::None);
 }
 
-pub fn get_conf() -> Result<Arc<Conf>, &'static str> {
+pub fn get_conf() -> Result<Arc<Conf>, String> {
     lazy_static::initialize(&GLOBAL_CONF);
 
     let mut conf = GLOBAL_CONF
@@ -135,6 +136,8 @@ pub(crate) fn clear_conf() -> Result<Option<State>, String> {
 mod tests {
     use std::env;
 
+    use remote_pty_common::channel::transport::conf::TransportType;
+
     use crate::conf::{get_conf, GLOBAL_CONF};
 
     #[test]
@@ -144,16 +147,16 @@ mod tests {
 
         // mock env vars
         let sock_path = "/tmp/remote-pty.sock";
-        env::set_var("RPTY_SOCK_PATH", sock_path);
+        env::set_var("RPTY_TRANSPORT", format!("unix:{sock_path}"));
         env::set_var("RPTY_STDIN", "0");
         env::set_var("RPTY_STDOUT", "1,2");
 
         let conf = get_conf().expect("could not construct conf");
-        assert_eq!(conf.sock_path, sock_path);
+        assert_eq!(conf.transport, TransportType::Unix(sock_path.to_string()));
         assert_eq!(conf.stdin_fd, 0);
         assert_eq!(conf.stdout_fds, vec![1, 2]);
 
-        env::remove_var("RPTY_SOCK_PATH");
+        env::remove_var("RPTY_TRANSPORT");
         env::remove_var("RPTY_STDIN");
         env::remove_var("RPTY_STDOUT");
     }

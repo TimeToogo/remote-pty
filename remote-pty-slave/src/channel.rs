@@ -1,4 +1,6 @@
 use std::{
+    io,
+    net::TcpStream,
     os::unix::{net::UnixStream, prelude::AsRawFd, prelude::FromRawFd},
     sync::Mutex,
 };
@@ -6,7 +8,13 @@ use std::{
 use errno::set_errno;
 use lazy_static::lazy_static;
 
-use remote_pty_common::{channel::{transport::rw::ReadWriteTransport, RemoteChannel}, log::debug};
+use remote_pty_common::{
+    channel::{
+        transport::{conf::TransportType, rw::ReadWriteTransport},
+        RemoteChannel,
+    },
+    log::debug,
+};
 
 use crate::conf::Conf;
 
@@ -22,36 +30,60 @@ pub fn get_remote_channel(conf: &Conf) -> Result<RemoteChannel, String> {
         .map_err(|_| "failed to lock channel mutex")?;
 
     if chan.is_none() {
-        let transport = init_transport(conf)?;
-        let new_chan = RemoteChannel::new(transport);
+        let new_chan = init_channel(conf)?;
         let _ = chan.insert(new_chan);
     }
 
     Ok(chan.as_ref().unwrap().clone())
 }
 
-fn init_transport(conf: &Conf) -> Result<ReadWriteTransport<UnixStream, UnixStream>, String> {
+trait FdConvertable: AsRawFd + FromRawFd + io::Read + io::Write + Send {}
+impl<T: AsRawFd + FromRawFd + io::Read + io::Write + Send> FdConvertable for T {}
+
+fn init_channel(conf: &Conf) -> Result<RemoteChannel, String> {
     let orig_errno = errno::errno();
-    let transport = UnixStream::connect(&conf.sock_path);
+    let chan = match &conf.transport {
+        TransportType::Unix(sock_path) => {
+            process_transport(conf, UnixStream::connect(sock_path), |i| i.try_clone())
+        }
+        TransportType::Tcp(sock_addr) => {
+            process_transport(conf, TcpStream::connect(sock_addr), |i| i.try_clone())
+        }
+    };
     set_errno(orig_errno);
 
-    if let Err(e) = transport {
-        return Err(format!("failed to connect to unix socket: {}", e));
-    }
+    chan
+}
 
-    let transport_read = ensure_not_stdio_fd(conf, transport.unwrap())?;
+fn process_transport<T: FdConvertable + 'static, C>(
+    conf: &Conf,
+    transport: Result<T, io::Error>,
+    try_clone: C,
+) -> Result<RemoteChannel, String>
+where
+    C: Fn(&T) -> Result<T, io::Error>,
+{
+    let transport = match transport {
+        Ok(t) => t,
+        Err(e) => {
+            return Err(format!(
+                "failed to connect to transport {:?}: {}",
+                conf.transport, e
+            ))
+        }
+    };
+
+    let transport_read = ensure_not_stdio_fd(conf, transport)?;
     let transport_write = ensure_not_stdio_fd(
         conf,
-        transport_read
-            .try_clone()
-            .map_err(|_| "failed to clone unix socket")?,
+        try_clone(&transport_read).map_err(|_| "failed to clone socket")?,
     )?;
     let transport = ReadWriteTransport::new(transport_read, transport_write);
 
-    Ok(transport)
+    Ok(RemoteChannel::new(transport))
 }
 
-fn ensure_not_stdio_fd<T: AsRawFd + FromRawFd>(conf: &Conf, transport: T) -> Result<T, String> {
+fn ensure_not_stdio_fd<T: FdConvertable>(conf: &Conf, transport: T) -> Result<T, String> {
     let fd = transport.as_raw_fd();
     let mut new_fd = 255;
 
@@ -98,6 +130,8 @@ pub(crate) fn close_remote_channel() -> Result<(), String> {
 mod tests {
     use std::{os::unix::net::UnixListener, sync::Mutex};
 
+    use remote_pty_common::channel::transport::conf::TransportType;
+
     use crate::{
         channel::{get_remote_channel, GLOBAL_CHANNEL},
         conf::{Conf, State},
@@ -113,7 +147,7 @@ mod tests {
         let _ = std::fs::remove_file(sock_path);
         let _sock = UnixListener::bind(sock_path).unwrap();
         let conf = Conf {
-            sock_path: sock_path.to_string(),
+            transport: TransportType::Unix(sock_path.to_string()),
             stdin_fd: 0,
             stdout_fds: vec![],
             state: Mutex::new(State::new()),
