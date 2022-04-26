@@ -32,10 +32,10 @@ index b349e93c..8396f8fd 100644
 \ No newline at end of file
 diff --git a/builtins/busybox.def b/builtins/busybox.def
 new file mode 100644
-index 00000000..fc9f6737
+index 00000000..56121354
 --- /dev/null
 +++ b/builtins/busybox.def
-@@ -0,0 +1,2615 @@
+@@ -0,0 +1,2585 @@
 +This file is busybox.def, from which is created busybox.c.
 +It implements the builtin "busybox" in Bash.
 +
@@ -503,12 +503,6 @@ index 00000000..fc9f6737
 +$FUNCTION busybox_builtin_fakeidentdfallocate
 +$SHORT_DOC fakeidentdfallocate
 +Executed busybox fakeidentdfallocate command
-+$END
-+
-+$BUILTIN false
-+$FUNCTION busybox_builtin_false
-+$SHORT_DOC false
-+Executed busybox false command
 +$END
 +
 +$BUILTIN fatattr
@@ -1332,12 +1326,6 @@ index 00000000..fc9f6737
 +Executed busybox powertopprintenv command
 +$END
 +
-+$BUILTIN printf
-+$FUNCTION busybox_builtin_printf
-+$SHORT_DOC printf
-+Executed busybox printf command
-+$END
-+
 +$BUILTIN ps
 +$FUNCTION busybox_builtin_ps
 +$SHORT_DOC ps
@@ -1354,12 +1342,6 @@ index 00000000..fc9f6737
 +$FUNCTION busybox_builtin_pstree
 +$SHORT_DOC pstree
 +Executed busybox pstree command
-+$END
-+
-+$BUILTIN pwd
-+$FUNCTION busybox_builtin_pwd
-+$SHORT_DOC pwd
-+Executed busybox pwd command
 +$END
 +
 +$BUILTIN pwdx
@@ -1827,12 +1809,6 @@ index 00000000..fc9f6737
 +Executed busybox tftpd command
 +$END
 +
-+$BUILTIN time
-+$FUNCTION busybox_builtin_time
-+$SHORT_DOC time
-+Executed busybox time command
-+$END
-+
 +$BUILTIN timeout
 +$FUNCTION busybox_builtin_timeout
 +$SHORT_DOC timeout
@@ -1867,12 +1843,6 @@ index 00000000..fc9f6737
 +$FUNCTION busybox_builtin_traceroute6
 +$SHORT_DOC traceroute6
 +Executed busybox traceroute6 command
-+$END
-+
-+$BUILTIN true
-+$FUNCTION busybox_builtin_true
-+$SHORT_DOC true
-+Executed busybox true command
 +$END
 +
 +$BUILTIN truncate
