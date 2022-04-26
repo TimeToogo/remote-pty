@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::Read,
     os::unix::prelude::FromRawFd,
+    ptr,
     sync::mpsc::channel,
     thread::{self, JoinHandle},
     time::Duration,
@@ -168,6 +169,25 @@ extern "C" fn wait_for_output() {
 
     if !conf.is_main_thread() {
         return;
+    }
+
+    unsafe {
+        libc::fflush(ptr::null_mut());
+    }
+
+    if let Ok(state) = conf.state.lock() {
+        if let Some(fds) = state
+            .stdout_inode
+            .and_then(|i| get_open_fds_by_inode(i).ok())
+        {
+            for fd in &fds {
+                unsafe {
+                    libc::close(*fd);
+                }
+            }
+
+            debug(format!("closed {} fds pointing to stdout", fds.len()));
+        }
     }
 
     let thread = match unsafe { STDOUT_STREAM_THREAD.take() } {
