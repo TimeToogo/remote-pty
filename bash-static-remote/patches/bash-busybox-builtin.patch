@@ -32,10 +32,10 @@ index b349e93c..8396f8fd 100644
 \ No newline at end of file
 diff --git a/builtins/busybox.def b/builtins/busybox.def
 new file mode 100644
-index 00000000..efa5819d
+index 00000000..2e412b2a
 --- /dev/null
 +++ b/builtins/busybox.def
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,2604 @@
 +This file is busybox.def, from which is created busybox.c.
 +It implements the builtin "busybox" in Bash.
 +
@@ -70,6 +70,2118 @@ index 00000000..efa5819d
 +Executes a busybox command
 +$END
 +
++$BUILTIN acpid
++$FUNCTION busybox_builtin_acpid
++$SHORT_DOC acpid
++Executed busybox acpid command
++$END
++
++$BUILTIN add-shell
++$FUNCTION busybox_builtin_add_shell
++$SHORT_DOC add-shell
++Executed busybox add-shell command
++$END
++
++$BUILTIN addgroup
++$FUNCTION busybox_builtin_addgroup
++$SHORT_DOC addgroup
++Executed busybox addgroup command
++$END
++
++$BUILTIN adduser
++$FUNCTION busybox_builtin_adduser
++$SHORT_DOC adduser
++Executed busybox adduser command
++$END
++
++$BUILTIN adjtimex
++$FUNCTION busybox_builtin_adjtimex
++$SHORT_DOC adjtimex
++Executed busybox adjtimex command
++$END
++
++$BUILTIN arch
++$FUNCTION busybox_builtin_arch
++$SHORT_DOC arch
++Executed busybox arch command
++$END
++
++$BUILTIN arparping
++$FUNCTION busybox_builtin_arparping
++$SHORT_DOC arparping
++Executed busybox arparping command
++$END
++
++$BUILTIN ascii
++$FUNCTION busybox_builtin_ascii
++$SHORT_DOC ascii
++Executed busybox ascii command
++$END
++
++$BUILTIN ash
++$FUNCTION busybox_builtin_ash
++$SHORT_DOC ash
++Executed busybox ash command
++$END
++
++$BUILTIN awk
++$FUNCTION busybox_builtin_awk
++$SHORT_DOC awk
++Executed busybox awk command
++$END
++
++$BUILTIN base32
++$FUNCTION busybox_builtin_base32
++$SHORT_DOC base32
++Executed busybox base32 command
++$END
++
++$BUILTIN base64
++$FUNCTION busybox_builtin_base64
++$SHORT_DOC base64
++Executed busybox base64 command
++$END
++
++$BUILTIN basename
++$FUNCTION busybox_builtin_basename
++$SHORT_DOC basename
++Executed busybox basename command
++$END
++
++$BUILTIN bc
++$FUNCTION busybox_builtin_bc
++$SHORT_DOC bc
++Executed busybox bc command
++$END
++
++$BUILTIN beepblkdiscard
++$FUNCTION busybox_builtin_beepblkdiscard
++$SHORT_DOC beepblkdiscard
++Executed busybox beepblkdiscard command
++$END
++
++$BUILTIN blkid
++$FUNCTION busybox_builtin_blkid
++$SHORT_DOC blkid
++Executed busybox blkid command
++$END
++
++$BUILTIN blockdev
++$FUNCTION busybox_builtin_blockdev
++$SHORT_DOC blockdev
++Executed busybox blockdev command
++$END
++
++$BUILTIN bootchartd
++$FUNCTION busybox_builtin_bootchartd
++$SHORT_DOC bootchartd
++Executed busybox bootchartd command
++$END
++
++$BUILTIN brctl
++$FUNCTION busybox_builtin_brctl
++$SHORT_DOC brctl
++Executed busybox brctl command
++$END
++
++$BUILTIN bunzip2
++$FUNCTION busybox_builtin_bunzip2
++$SHORT_DOC bunzip2
++Executed busybox bunzip2 command
++$END
++
++$BUILTIN bzcatbzip2
++$FUNCTION busybox_builtin_bzcatbzip2
++$SHORT_DOC bzcatbzip2
++Executed busybox bzcatbzip2 command
++$END
++
++$BUILTIN cal
++$FUNCTION busybox_builtin_cal
++$SHORT_DOC cal
++Executed busybox cal command
++$END
++
++$BUILTIN cat
++$FUNCTION busybox_builtin_cat
++$SHORT_DOC cat
++Executed busybox cat command
++$END
++
++$BUILTIN chat
++$FUNCTION busybox_builtin_chat
++$SHORT_DOC chat
++Executed busybox chat command
++$END
++
++$BUILTIN chattr
++$FUNCTION busybox_builtin_chattr
++$SHORT_DOC chattr
++Executed busybox chattr command
++$END
++
++$BUILTIN chgrp
++$FUNCTION busybox_builtin_chgrp
++$SHORT_DOC chgrp
++Executed busybox chgrp command
++$END
++
++$BUILTIN chmod
++$FUNCTION busybox_builtin_chmod
++$SHORT_DOC chmod
++Executed busybox chmod command
++$END
++
++$BUILTIN chown
++$FUNCTION busybox_builtin_chown
++$SHORT_DOC chown
++Executed busybox chown command
++$END
++
++$BUILTIN chpasswdchpst
++$FUNCTION busybox_builtin_chpasswdchpst
++$SHORT_DOC chpasswdchpst
++Executed busybox chpasswdchpst command
++$END
++
++$BUILTIN chroot
++$FUNCTION busybox_builtin_chroot
++$SHORT_DOC chroot
++Executed busybox chroot command
++$END
++
++$BUILTIN chrt
++$FUNCTION busybox_builtin_chrt
++$SHORT_DOC chrt
++Executed busybox chrt command
++$END
++
++$BUILTIN chvt
++$FUNCTION busybox_builtin_chvt
++$SHORT_DOC chvt
++Executed busybox chvt command
++$END
++
++$BUILTIN cksum
++$FUNCTION busybox_builtin_cksum
++$SHORT_DOC cksum
++Executed busybox cksum command
++$END
++
++$BUILTIN clear
++$FUNCTION busybox_builtin_clear
++$SHORT_DOC clear
++Executed busybox clear command
++$END
++
++$BUILTIN cmp
++$FUNCTION busybox_builtin_cmp
++$SHORT_DOC cmp
++Executed busybox cmp command
++$END
++
++$BUILTIN comm
++$FUNCTION busybox_builtin_comm
++$SHORT_DOC comm
++Executed busybox comm command
++$END
++
++$BUILTIN conspy
++$FUNCTION busybox_builtin_conspy
++$SHORT_DOC conspy
++Executed busybox conspy command
++$END
++
++$BUILTIN cpcpio
++$FUNCTION busybox_builtin_cpcpio
++$SHORT_DOC cpcpio
++Executed busybox cpcpio command
++$END
++
++$BUILTIN crc32
++$FUNCTION busybox_builtin_crc32
++$SHORT_DOC crc32
++Executed busybox crc32 command
++$END
++
++$BUILTIN crond
++$FUNCTION busybox_builtin_crond
++$SHORT_DOC crond
++Executed busybox crond command
++$END
++
++$BUILTIN crontab
++$FUNCTION busybox_builtin_crontab
++$SHORT_DOC crontab
++Executed busybox crontab command
++$END
++
++$BUILTIN cryptpw
++$FUNCTION busybox_builtin_cryptpw
++$SHORT_DOC cryptpw
++Executed busybox cryptpw command
++$END
++
++$BUILTIN cttyhack
++$FUNCTION busybox_builtin_cttyhack
++$SHORT_DOC cttyhack
++Executed busybox cttyhack command
++$END
++
++$BUILTIN cut
++$FUNCTION busybox_builtin_cut
++$SHORT_DOC cut
++Executed busybox cut command
++$END
++
++$BUILTIN date
++$FUNCTION busybox_builtin_date
++$SHORT_DOC date
++Executed busybox date command
++$END
++
++$BUILTIN dcdd
++$FUNCTION busybox_builtin_dcdd
++$SHORT_DOC dcdd
++Executed busybox dcdd command
++$END
++
++$BUILTIN deallocvt
++$FUNCTION busybox_builtin_deallocvt
++$SHORT_DOC deallocvt
++Executed busybox deallocvt command
++$END
++
++$BUILTIN delgroup
++$FUNCTION busybox_builtin_delgroup
++$SHORT_DOC delgroup
++Executed busybox delgroup command
++$END
++
++$BUILTIN deluser
++$FUNCTION busybox_builtin_deluser
++$SHORT_DOC deluser
++Executed busybox deluser command
++$END
++
++$BUILTIN depmod
++$FUNCTION busybox_builtin_depmod
++$SHORT_DOC depmod
++Executed busybox depmod command
++$END
++
++$BUILTIN devmem
++$FUNCTION busybox_builtin_devmem
++$SHORT_DOC devmem
++Executed busybox devmem command
++$END
++
++$BUILTIN df
++$FUNCTION busybox_builtin_df
++$SHORT_DOC df
++Executed busybox df command
++$END
++
++$BUILTIN dhcprelaydiff
++$FUNCTION busybox_builtin_dhcprelaydiff
++$SHORT_DOC dhcprelaydiff
++Executed busybox dhcprelaydiff command
++$END
++
++$BUILTIN dirname
++$FUNCTION busybox_builtin_dirname
++$SHORT_DOC dirname
++Executed busybox dirname command
++$END
++
++$BUILTIN dmesg
++$FUNCTION busybox_builtin_dmesg
++$SHORT_DOC dmesg
++Executed busybox dmesg command
++$END
++
++$BUILTIN dnsd
++$FUNCTION busybox_builtin_dnsd
++$SHORT_DOC dnsd
++Executed busybox dnsd command
++$END
++
++$BUILTIN dnsdomainname
++$FUNCTION busybox_builtin_dnsdomainname
++$SHORT_DOC dnsdomainname
++Executed busybox dnsdomainname command
++$END
++
++$BUILTIN dos2unix
++$FUNCTION busybox_builtin_dos2unix
++$SHORT_DOC dos2unix
++Executed busybox dos2unix command
++$END
++
++$BUILTIN dpkgdpkg-deb
++$FUNCTION busybox_builtin_dpkgdpkg_deb
++$SHORT_DOC dpkgdpkg-deb
++Executed busybox dpkgdpkg-deb command
++$END
++
++$BUILTIN du
++$FUNCTION busybox_builtin_du
++$SHORT_DOC du
++Executed busybox du command
++$END
++
++$BUILTIN dumpkmap
++$FUNCTION busybox_builtin_dumpkmap
++$SHORT_DOC dumpkmap
++Executed busybox dumpkmap command
++$END
++
++$BUILTIN dumpleases
++$FUNCTION busybox_builtin_dumpleases
++$SHORT_DOC dumpleases
++Executed busybox dumpleases command
++$END
++
++$BUILTIN ed
++$FUNCTION busybox_builtin_ed
++$SHORT_DOC ed
++Executed busybox ed command
++$END
++
++$BUILTIN egrep
++$FUNCTION busybox_builtin_egrep
++$SHORT_DOC egrep
++Executed busybox egrep command
++$END
++
++$BUILTIN eject
++$FUNCTION busybox_builtin_eject
++$SHORT_DOC eject
++Executed busybox eject command
++$END
++
++$BUILTIN envenvdir
++$FUNCTION busybox_builtin_envenvdir
++$SHORT_DOC envenvdir
++Executed busybox envenvdir command
++$END
++
++$BUILTIN envuidgid
++$FUNCTION busybox_builtin_envuidgid
++$SHORT_DOC envuidgid
++Executed busybox envuidgid command
++$END
++
++$BUILTIN ether-wake
++$FUNCTION busybox_builtin_ether_wake
++$SHORT_DOC ether-wake
++Executed busybox ether-wake command
++$END
++
++$BUILTIN expand
++$FUNCTION busybox_builtin_expand
++$SHORT_DOC expand
++Executed busybox expand command
++$END
++
++$BUILTIN expr
++$FUNCTION busybox_builtin_expr
++$SHORT_DOC expr
++Executed busybox expr command
++$END
++
++$BUILTIN factor
++$FUNCTION busybox_builtin_factor
++$SHORT_DOC factor
++Executed busybox factor command
++$END
++
++$BUILTIN fakeidentdfallocate
++$FUNCTION busybox_builtin_fakeidentdfallocate
++$SHORT_DOC fakeidentdfallocate
++Executed busybox fakeidentdfallocate command
++$END
++
++$BUILTIN false
++$FUNCTION busybox_builtin_false
++$SHORT_DOC false
++Executed busybox false command
++$END
++
++$BUILTIN fatattr
++$FUNCTION busybox_builtin_fatattr
++$SHORT_DOC fatattr
++Executed busybox fatattr command
++$END
++
++$BUILTIN fbset
++$FUNCTION busybox_builtin_fbset
++$SHORT_DOC fbset
++Executed busybox fbset command
++$END
++
++$BUILTIN fbsplash
++$FUNCTION busybox_builtin_fbsplash
++$SHORT_DOC fbsplash
++Executed busybox fbsplash command
++$END
++
++$BUILTIN fdflush
++$FUNCTION busybox_builtin_fdflush
++$SHORT_DOC fdflush
++Executed busybox fdflush command
++$END
++
++$BUILTIN fdformatfdisk
++$FUNCTION busybox_builtin_fdformatfdisk
++$SHORT_DOC fdformatfdisk
++Executed busybox fdformatfdisk command
++$END
++
++$BUILTIN fgconsole
++$FUNCTION busybox_builtin_fgconsole
++$SHORT_DOC fgconsole
++Executed busybox fgconsole command
++$END
++
++$BUILTIN fgrep
++$FUNCTION busybox_builtin_fgrep
++$SHORT_DOC fgrep
++Executed busybox fgrep command
++$END
++
++$BUILTIN find
++$FUNCTION busybox_builtin_find
++$SHORT_DOC find
++Executed busybox find command
++$END
++
++$BUILTIN findfs
++$FUNCTION busybox_builtin_findfs
++$SHORT_DOC findfs
++Executed busybox findfs command
++$END
++
++$BUILTIN flock
++$FUNCTION busybox_builtin_flock
++$SHORT_DOC flock
++Executed busybox flock command
++$END
++
++$BUILTIN fold
++$FUNCTION busybox_builtin_fold
++$SHORT_DOC fold
++Executed busybox fold command
++$END
++
++$BUILTIN freefreeramdisk
++$FUNCTION busybox_builtin_freefreeramdisk
++$SHORT_DOC freefreeramdisk
++Executed busybox freefreeramdisk command
++$END
++
++$BUILTIN fsck
++$FUNCTION busybox_builtin_fsck
++$SHORT_DOC fsck
++Executed busybox fsck command
++$END
++
++$BUILTIN fsck.minix
++$FUNCTION busybox_builtin_fsck_minix
++$SHORT_DOC fsck.minix
++Executed busybox fsck.minix command
++$END
++
++$BUILTIN fsfreeze
++$FUNCTION busybox_builtin_fsfreeze
++$SHORT_DOC fsfreeze
++Executed busybox fsfreeze command
++$END
++
++$BUILTIN fstrim
++$FUNCTION busybox_builtin_fstrim
++$SHORT_DOC fstrim
++Executed busybox fstrim command
++$END
++
++$BUILTIN fsync
++$FUNCTION busybox_builtin_fsync
++$SHORT_DOC fsync
++Executed busybox fsync command
++$END
++
++$BUILTIN ftpdftpget
++$FUNCTION busybox_builtin_ftpdftpget
++$SHORT_DOC ftpdftpget
++Executed busybox ftpdftpget command
++$END
++
++$BUILTIN ftpput
++$FUNCTION busybox_builtin_ftpput
++$SHORT_DOC ftpput
++Executed busybox ftpput command
++$END
++
++$BUILTIN fuser
++$FUNCTION busybox_builtin_fuser
++$SHORT_DOC fuser
++Executed busybox fuser command
++$END
++
++$BUILTIN getty
++$FUNCTION busybox_builtin_getty
++$SHORT_DOC getty
++Executed busybox getty command
++$END
++
++$BUILTIN grep
++$FUNCTION busybox_builtin_grep
++$SHORT_DOC grep
++Executed busybox grep command
++$END
++
++$BUILTIN groups
++$FUNCTION busybox_builtin_groups
++$SHORT_DOC groups
++Executed busybox groups command
++$END
++
++$BUILTIN gunzipgzip
++$FUNCTION busybox_builtin_gunzipgzip
++$SHORT_DOC gunzipgzip
++Executed busybox gunzipgzip command
++$END
++
++$BUILTIN halt
++$FUNCTION busybox_builtin_halt
++$SHORT_DOC halt
++Executed busybox halt command
++$END
++
++$BUILTIN hd
++$FUNCTION busybox_builtin_hd
++$SHORT_DOC hd
++Executed busybox hd command
++$END
++
++$BUILTIN hdparm
++$FUNCTION busybox_builtin_hdparm
++$SHORT_DOC hdparm
++Executed busybox hdparm command
++$END
++
++$BUILTIN head
++$FUNCTION busybox_builtin_head
++$SHORT_DOC head
++Executed busybox head command
++$END
++
++$BUILTIN hexdump
++$FUNCTION busybox_builtin_hexdump
++$SHORT_DOC hexdump
++Executed busybox hexdump command
++$END
++
++$BUILTIN hexedit
++$FUNCTION busybox_builtin_hexedit
++$SHORT_DOC hexedit
++Executed busybox hexedit command
++$END
++
++$BUILTIN hostidhostname
++$FUNCTION busybox_builtin_hostidhostname
++$SHORT_DOC hostidhostname
++Executed busybox hostidhostname command
++$END
++
++$BUILTIN httpd
++$FUNCTION busybox_builtin_httpd
++$SHORT_DOC httpd
++Executed busybox httpd command
++$END
++
++$BUILTIN hush
++$FUNCTION busybox_builtin_hush
++$SHORT_DOC hush
++Executed busybox hush command
++$END
++
++$BUILTIN hwclock
++$FUNCTION busybox_builtin_hwclock
++$SHORT_DOC hwclock
++Executed busybox hwclock command
++$END
++
++$BUILTIN i2cdetect
++$FUNCTION busybox_builtin_i2cdetect
++$SHORT_DOC i2cdetect
++Executed busybox i2cdetect command
++$END
++
++$BUILTIN i2cdump
++$FUNCTION busybox_builtin_i2cdump
++$SHORT_DOC i2cdump
++Executed busybox i2cdump command
++$END
++
++$BUILTIN i2cgeti2cset
++$FUNCTION busybox_builtin_i2cgeti2cset
++$SHORT_DOC i2cgeti2cset
++Executed busybox i2cgeti2cset command
++$END
++
++$BUILTIN i2ctransfer
++$FUNCTION busybox_builtin_i2ctransfer
++$SHORT_DOC i2ctransfer
++Executed busybox i2ctransfer command
++$END
++
++$BUILTIN id
++$FUNCTION busybox_builtin_id
++$SHORT_DOC id
++Executed busybox id command
++$END
++
++$BUILTIN ifconfig
++$FUNCTION busybox_builtin_ifconfig
++$SHORT_DOC ifconfig
++Executed busybox ifconfig command
++$END
++
++$BUILTIN ifdown
++$FUNCTION busybox_builtin_ifdown
++$SHORT_DOC ifdown
++Executed busybox ifdown command
++$END
++
++$BUILTIN ifenslave
++$FUNCTION busybox_builtin_ifenslave
++$SHORT_DOC ifenslave
++Executed busybox ifenslave command
++$END
++
++$BUILTIN ifplugdifup
++$FUNCTION busybox_builtin_ifplugdifup
++$SHORT_DOC ifplugdifup
++Executed busybox ifplugdifup command
++$END
++
++$BUILTIN inetd
++$FUNCTION busybox_builtin_inetd
++$SHORT_DOC inetd
++Executed busybox inetd command
++$END
++
++$BUILTIN init
++$FUNCTION busybox_builtin_init
++$SHORT_DOC init
++Executed busybox init command
++$END
++
++$BUILTIN insmod
++$FUNCTION busybox_builtin_insmod
++$SHORT_DOC insmod
++Executed busybox insmod command
++$END
++
++$BUILTIN install
++$FUNCTION busybox_builtin_install
++$SHORT_DOC install
++Executed busybox install command
++$END
++
++$BUILTIN ionice
++$FUNCTION busybox_builtin_ionice
++$SHORT_DOC ionice
++Executed busybox ionice command
++$END
++
++$BUILTIN iostat
++$FUNCTION busybox_builtin_iostat
++$SHORT_DOC iostat
++Executed busybox iostat command
++$END
++
++$BUILTIN ip
++$FUNCTION busybox_builtin_ip
++$SHORT_DOC ip
++Executed busybox ip command
++$END
++
++$BUILTIN ipaddripcalc
++$FUNCTION busybox_builtin_ipaddripcalc
++$SHORT_DOC ipaddripcalc
++Executed busybox ipaddripcalc command
++$END
++
++$BUILTIN ipcrm
++$FUNCTION busybox_builtin_ipcrm
++$SHORT_DOC ipcrm
++Executed busybox ipcrm command
++$END
++
++$BUILTIN ipcs
++$FUNCTION busybox_builtin_ipcs
++$SHORT_DOC ipcs
++Executed busybox ipcs command
++$END
++
++$BUILTIN iplink
++$FUNCTION busybox_builtin_iplink
++$SHORT_DOC iplink
++Executed busybox iplink command
++$END
++
++$BUILTIN ipneigh
++$FUNCTION busybox_builtin_ipneigh
++$SHORT_DOC ipneigh
++Executed busybox ipneigh command
++$END
++
++$BUILTIN iproute
++$FUNCTION busybox_builtin_iproute
++$SHORT_DOC iproute
++Executed busybox iproute command
++$END
++
++$BUILTIN iprule
++$FUNCTION busybox_builtin_iprule
++$SHORT_DOC iprule
++Executed busybox iprule command
++$END
++
++$BUILTIN iptunnelkbd_mode
++$FUNCTION busybox_builtin_iptunnelkbd_mode
++$SHORT_DOC iptunnelkbd_mode
++Executed busybox iptunnelkbd_mode command
++$END
++
++$BUILTIN killall
++$FUNCTION busybox_builtin_killall
++$SHORT_DOC killall
++Executed busybox killall command
++$END
++
++$BUILTIN killall5
++$FUNCTION busybox_builtin_killall5
++$SHORT_DOC killall5
++Executed busybox killall5 command
++$END
++
++$BUILTIN klogd
++$FUNCTION busybox_builtin_klogd
++$SHORT_DOC klogd
++Executed busybox klogd command
++$END
++
++$BUILTIN last
++$FUNCTION busybox_builtin_last
++$SHORT_DOC last
++Executed busybox last command
++$END
++
++$BUILTIN less
++$FUNCTION busybox_builtin_less
++$SHORT_DOC less
++Executed busybox less command
++$END
++
++$BUILTIN linklinux32
++$FUNCTION busybox_builtin_linklinux32
++$SHORT_DOC linklinux32
++Executed busybox linklinux32 command
++$END
++
++$BUILTIN linux64
++$FUNCTION busybox_builtin_linux64
++$SHORT_DOC linux64
++Executed busybox linux64 command
++$END
++
++$BUILTIN linuxrc
++$FUNCTION busybox_builtin_linuxrc
++$SHORT_DOC linuxrc
++Executed busybox linuxrc command
++$END
++
++$BUILTIN ln
++$FUNCTION busybox_builtin_ln
++$SHORT_DOC ln
++Executed busybox ln command
++$END
++
++$BUILTIN loadfont
++$FUNCTION busybox_builtin_loadfont
++$SHORT_DOC loadfont
++Executed busybox loadfont command
++$END
++
++$BUILTIN loadkmap
++$FUNCTION busybox_builtin_loadkmap
++$SHORT_DOC loadkmap
++Executed busybox loadkmap command
++$END
++
++$BUILTIN loggerlogin
++$FUNCTION busybox_builtin_loggerlogin
++$SHORT_DOC loggerlogin
++Executed busybox loggerlogin command
++$END
++
++$BUILTIN logname
++$FUNCTION busybox_builtin_logname
++$SHORT_DOC logname
++Executed busybox logname command
++$END
++
++$BUILTIN logread
++$FUNCTION busybox_builtin_logread
++$SHORT_DOC logread
++Executed busybox logread command
++$END
++
++$BUILTIN losetup
++$FUNCTION busybox_builtin_losetup
++$SHORT_DOC losetup
++Executed busybox losetup command
++$END
++
++$BUILTIN lpd
++$FUNCTION busybox_builtin_lpd
++$SHORT_DOC lpd
++Executed busybox lpd command
++$END
++
++$BUILTIN lpq
++$FUNCTION busybox_builtin_lpq
++$SHORT_DOC lpq
++Executed busybox lpq command
++$END
++
++$BUILTIN lpr
++$FUNCTION busybox_builtin_lpr
++$SHORT_DOC lpr
++Executed busybox lpr command
++$END
++
++$BUILTIN ls
++$FUNCTION busybox_builtin_ls
++$SHORT_DOC ls
++Executed busybox ls command
++$END
++
++$BUILTIN lsattrlsmod
++$FUNCTION busybox_builtin_lsattrlsmod
++$SHORT_DOC lsattrlsmod
++Executed busybox lsattrlsmod command
++$END
++
++$BUILTIN lsof
++$FUNCTION busybox_builtin_lsof
++$SHORT_DOC lsof
++Executed busybox lsof command
++$END
++
++$BUILTIN lspci
++$FUNCTION busybox_builtin_lspci
++$SHORT_DOC lspci
++Executed busybox lspci command
++$END
++
++$BUILTIN lsscsi
++$FUNCTION busybox_builtin_lsscsi
++$SHORT_DOC lsscsi
++Executed busybox lsscsi command
++$END
++
++$BUILTIN lsusb
++$FUNCTION busybox_builtin_lsusb
++$SHORT_DOC lsusb
++Executed busybox lsusb command
++$END
++
++$BUILTIN lzcat
++$FUNCTION busybox_builtin_lzcat
++$SHORT_DOC lzcat
++Executed busybox lzcat command
++$END
++
++$BUILTIN lzma
++$FUNCTION busybox_builtin_lzma
++$SHORT_DOC lzma
++Executed busybox lzma command
++$END
++
++$BUILTIN lzop
++$FUNCTION busybox_builtin_lzop
++$SHORT_DOC lzop
++Executed busybox lzop command
++$END
++
++$BUILTIN makedevsmakemime
++$FUNCTION busybox_builtin_makedevsmakemime
++$SHORT_DOC makedevsmakemime
++Executed busybox makedevsmakemime command
++$END
++
++$BUILTIN man
++$FUNCTION busybox_builtin_man
++$SHORT_DOC man
++Executed busybox man command
++$END
++
++$BUILTIN md5sum
++$FUNCTION busybox_builtin_md5sum
++$SHORT_DOC md5sum
++Executed busybox md5sum command
++$END
++
++$BUILTIN mdev
++$FUNCTION busybox_builtin_mdev
++$SHORT_DOC mdev
++Executed busybox mdev command
++$END
++
++$BUILTIN mesg
++$FUNCTION busybox_builtin_mesg
++$SHORT_DOC mesg
++Executed busybox mesg command
++$END
++
++$BUILTIN microcom
++$FUNCTION busybox_builtin_microcom
++$SHORT_DOC microcom
++Executed busybox microcom command
++$END
++
++$BUILTIN mim
++$FUNCTION busybox_builtin_mim
++$SHORT_DOC mim
++Executed busybox mim command
++$END
++
++$BUILTIN mkdirmkdosfs
++$FUNCTION busybox_builtin_mkdirmkdosfs
++$SHORT_DOC mkdirmkdosfs
++Executed busybox mkdirmkdosfs command
++$END
++
++$BUILTIN mke2fs
++$FUNCTION busybox_builtin_mke2fs
++$SHORT_DOC mke2fs
++Executed busybox mke2fs command
++$END
++
++$BUILTIN mkfifo
++$FUNCTION busybox_builtin_mkfifo
++$SHORT_DOC mkfifo
++Executed busybox mkfifo command
++$END
++
++$BUILTIN mkfs.ext2
++$FUNCTION busybox_builtin_mkfs_ext2
++$SHORT_DOC mkfs.ext2
++Executed busybox mkfs.ext2 command
++$END
++
++$BUILTIN mkfs.minix
++$FUNCTION busybox_builtin_mkfs_minix
++$SHORT_DOC mkfs.minix
++Executed busybox mkfs.minix command
++$END
++
++$BUILTIN mkfs.vfatmknod
++$FUNCTION busybox_builtin_mkfs_vfatmknod
++$SHORT_DOC mkfs.vfatmknod
++Executed busybox mkfs.vfatmknod command
++$END
++
++$BUILTIN mkpasswd
++$FUNCTION busybox_builtin_mkpasswd
++$SHORT_DOC mkpasswd
++Executed busybox mkpasswd command
++$END
++
++$BUILTIN mkswap
++$FUNCTION busybox_builtin_mkswap
++$SHORT_DOC mkswap
++Executed busybox mkswap command
++$END
++
++$BUILTIN mktemp
++$FUNCTION busybox_builtin_mktemp
++$SHORT_DOC mktemp
++Executed busybox mktemp command
++$END
++
++$BUILTIN modinfo
++$FUNCTION busybox_builtin_modinfo
++$SHORT_DOC modinfo
++Executed busybox modinfo command
++$END
++
++$BUILTIN modprobe
++$FUNCTION busybox_builtin_modprobe
++$SHORT_DOC modprobe
++Executed busybox modprobe command
++$END
++
++$BUILTIN more
++$FUNCTION busybox_builtin_more
++$SHORT_DOC more
++Executed busybox more command
++$END
++
++$BUILTIN mountmountpoint
++$FUNCTION busybox_builtin_mountmountpoint
++$SHORT_DOC mountmountpoint
++Executed busybox mountmountpoint command
++$END
++
++$BUILTIN mpstat
++$FUNCTION busybox_builtin_mpstat
++$SHORT_DOC mpstat
++Executed busybox mpstat command
++$END
++
++$BUILTIN mt
++$FUNCTION busybox_builtin_mt
++$SHORT_DOC mt
++Executed busybox mt command
++$END
++
++$BUILTIN mv
++$FUNCTION busybox_builtin_mv
++$SHORT_DOC mv
++Executed busybox mv command
++$END
++
++$BUILTIN nameif
++$FUNCTION busybox_builtin_nameif
++$SHORT_DOC nameif
++Executed busybox nameif command
++$END
++
++$BUILTIN nanddump
++$FUNCTION busybox_builtin_nanddump
++$SHORT_DOC nanddump
++Executed busybox nanddump command
++$END
++
++$BUILTIN nandwritenbd-client
++$FUNCTION busybox_builtin_nandwritenbd_client
++$SHORT_DOC nandwritenbd-client
++Executed busybox nandwritenbd-client command
++$END
++
++$BUILTIN nc
++$FUNCTION busybox_builtin_nc
++$SHORT_DOC nc
++Executed busybox nc command
++$END
++
++$BUILTIN netstat
++$FUNCTION busybox_builtin_netstat
++$SHORT_DOC netstat
++Executed busybox netstat command
++$END
++
++$BUILTIN nice
++$FUNCTION busybox_builtin_nice
++$SHORT_DOC nice
++Executed busybox nice command
++$END
++
++$BUILTIN nl
++$FUNCTION busybox_builtin_nl
++$SHORT_DOC nl
++Executed busybox nl command
++$END
++
++$BUILTIN nmeter
++$FUNCTION busybox_builtin_nmeter
++$SHORT_DOC nmeter
++Executed busybox nmeter command
++$END
++
++$BUILTIN nohup
++$FUNCTION busybox_builtin_nohup
++$SHORT_DOC nohup
++Executed busybox nohup command
++$END
++
++$BUILTIN nologinnproc
++$FUNCTION busybox_builtin_nologinnproc
++$SHORT_DOC nologinnproc
++Executed busybox nologinnproc command
++$END
++
++$BUILTIN nsenter
++$FUNCTION busybox_builtin_nsenter
++$SHORT_DOC nsenter
++Executed busybox nsenter command
++$END
++
++$BUILTIN nslookup
++$FUNCTION busybox_builtin_nslookup
++$SHORT_DOC nslookup
++Executed busybox nslookup command
++$END
++
++$BUILTIN ntpd
++$FUNCTION busybox_builtin_ntpd
++$SHORT_DOC ntpd
++Executed busybox ntpd command
++$END
++
++$BUILTIN od
++$FUNCTION busybox_builtin_od
++$SHORT_DOC od
++Executed busybox od command
++$END
++
++$BUILTIN openvt
++$FUNCTION busybox_builtin_openvt
++$SHORT_DOC openvt
++Executed busybox openvt command
++$END
++
++$BUILTIN partprobe
++$FUNCTION busybox_builtin_partprobe
++$SHORT_DOC partprobe
++Executed busybox partprobe command
++$END
++
++$BUILTIN passwdpaste
++$FUNCTION busybox_builtin_passwdpaste
++$SHORT_DOC passwdpaste
++Executed busybox passwdpaste command
++$END
++
++$BUILTIN patch
++$FUNCTION busybox_builtin_patch
++$SHORT_DOC patch
++Executed busybox patch command
++$END
++
++$BUILTIN pgrep
++$FUNCTION busybox_builtin_pgrep
++$SHORT_DOC pgrep
++Executed busybox pgrep command
++$END
++
++$BUILTIN pidof
++$FUNCTION busybox_builtin_pidof
++$SHORT_DOC pidof
++Executed busybox pidof command
++$END
++
++$BUILTIN ping
++$FUNCTION busybox_builtin_ping
++$SHORT_DOC ping
++Executed busybox ping command
++$END
++
++$BUILTIN ping6
++$FUNCTION busybox_builtin_ping6
++$SHORT_DOC ping6
++Executed busybox ping6 command
++$END
++
++$BUILTIN pipe_progresspivot_root
++$FUNCTION busybox_builtin_pipe_progresspivot_root
++$SHORT_DOC pipe_progresspivot_root
++Executed busybox pipe_progresspivot_root command
++$END
++
++$BUILTIN pkill
++$FUNCTION busybox_builtin_pkill
++$SHORT_DOC pkill
++Executed busybox pkill command
++$END
++
++$BUILTIN pmap
++$FUNCTION busybox_builtin_pmap
++$SHORT_DOC pmap
++Executed busybox pmap command
++$END
++
++$BUILTIN popmaildir
++$FUNCTION busybox_builtin_popmaildir
++$SHORT_DOC popmaildir
++Executed busybox popmaildir command
++$END
++
++$BUILTIN poweroff
++$FUNCTION busybox_builtin_poweroff
++$SHORT_DOC poweroff
++Executed busybox poweroff command
++$END
++
++$BUILTIN powertopprintenv
++$FUNCTION busybox_builtin_powertopprintenv
++$SHORT_DOC powertopprintenv
++Executed busybox powertopprintenv command
++$END
++
++$BUILTIN printf
++$FUNCTION busybox_builtin_printf
++$SHORT_DOC printf
++Executed busybox printf command
++$END
++
++$BUILTIN ps
++$FUNCTION busybox_builtin_ps
++$SHORT_DOC ps
++Executed busybox ps command
++$END
++
++$BUILTIN pscan
++$FUNCTION busybox_builtin_pscan
++$SHORT_DOC pscan
++Executed busybox pscan command
++$END
++
++$BUILTIN pstree
++$FUNCTION busybox_builtin_pstree
++$SHORT_DOC pstree
++Executed busybox pstree command
++$END
++
++$BUILTIN pwd
++$FUNCTION busybox_builtin_pwd
++$SHORT_DOC pwd
++Executed busybox pwd command
++$END
++
++$BUILTIN pwdx
++$FUNCTION busybox_builtin_pwdx
++$SHORT_DOC pwdx
++Executed busybox pwdx command
++$END
++
++$BUILTIN raidautorunrdate
++$FUNCTION busybox_builtin_raidautorunrdate
++$SHORT_DOC raidautorunrdate
++Executed busybox raidautorunrdate command
++$END
++
++$BUILTIN rdev
++$FUNCTION busybox_builtin_rdev
++$SHORT_DOC rdev
++Executed busybox rdev command
++$END
++
++$BUILTIN readahead
++$FUNCTION busybox_builtin_readahead
++$SHORT_DOC readahead
++Executed busybox readahead command
++$END
++
++$BUILTIN readlink
++$FUNCTION busybox_builtin_readlink
++$SHORT_DOC readlink
++Executed busybox readlink command
++$END
++
++$BUILTIN readprofile
++$FUNCTION busybox_builtin_readprofile
++$SHORT_DOC readprofile
++Executed busybox readprofile command
++$END
++
++$BUILTIN realpath
++$FUNCTION busybox_builtin_realpath
++$SHORT_DOC realpath
++Executed busybox realpath command
++$END
++
++$BUILTIN rebootreformime
++$FUNCTION busybox_builtin_rebootreformime
++$SHORT_DOC rebootreformime
++Executed busybox rebootreformime command
++$END
++
++$BUILTIN remove-shell
++$FUNCTION busybox_builtin_remove_shell
++$SHORT_DOC remove-shell
++Executed busybox remove-shell command
++$END
++
++$BUILTIN renice
++$FUNCTION busybox_builtin_renice
++$SHORT_DOC renice
++Executed busybox renice command
++$END
++
++$BUILTIN reset
++$FUNCTION busybox_builtin_reset
++$SHORT_DOC reset
++Executed busybox reset command
++$END
++
++$BUILTIN resize
++$FUNCTION busybox_builtin_resize
++$SHORT_DOC resize
++Executed busybox resize command
++$END
++
++$BUILTIN resume
++$FUNCTION busybox_builtin_resume
++$SHORT_DOC resume
++Executed busybox resume command
++$END
++
++$BUILTIN rev
++$FUNCTION busybox_builtin_rev
++$SHORT_DOC rev
++Executed busybox rev command
++$END
++
++$BUILTIN rmrmdir
++$FUNCTION busybox_builtin_rmrmdir
++$SHORT_DOC rmrmdir
++Executed busybox rmrmdir command
++$END
++
++$BUILTIN rmmod
++$FUNCTION busybox_builtin_rmmod
++$SHORT_DOC rmmod
++Executed busybox rmmod command
++$END
++
++$BUILTIN route
++$FUNCTION busybox_builtin_route
++$SHORT_DOC route
++Executed busybox route command
++$END
++
++$BUILTIN rpm
++$FUNCTION busybox_builtin_rpm
++$SHORT_DOC rpm
++Executed busybox rpm command
++$END
++
++$BUILTIN rpm2cpio
++$FUNCTION busybox_builtin_rpm2cpio
++$SHORT_DOC rpm2cpio
++Executed busybox rpm2cpio command
++$END
++
++$BUILTIN rtcwake
++$FUNCTION busybox_builtin_rtcwake
++$SHORT_DOC rtcwake
++Executed busybox rtcwake command
++$END
++
++$BUILTIN run-initrun-parts
++$FUNCTION busybox_builtin_run_initrun_parts
++$SHORT_DOC run-initrun-parts
++Executed busybox run-initrun-parts command
++$END
++
++$BUILTIN runlevel
++$FUNCTION busybox_builtin_runlevel
++$SHORT_DOC runlevel
++Executed busybox runlevel command
++$END
++
++$BUILTIN runsv
++$FUNCTION busybox_builtin_runsv
++$SHORT_DOC runsv
++Executed busybox runsv command
++$END
++
++$BUILTIN runsvdir
++$FUNCTION busybox_builtin_runsvdir
++$SHORT_DOC runsvdir
++Executed busybox runsvdir command
++$END
++
++$BUILTIN rx
++$FUNCTION busybox_builtin_rx
++$SHORT_DOC rx
++Executed busybox rx command
++$END
++
++$BUILTIN script
++$FUNCTION busybox_builtin_script
++$SHORT_DOC script
++Executed busybox script command
++$END
++
++$BUILTIN scriptreplaysed
++$FUNCTION busybox_builtin_scriptreplaysed
++$SHORT_DOC scriptreplaysed
++Executed busybox scriptreplaysed command
++$END
++
++$BUILTIN sendmail
++$FUNCTION busybox_builtin_sendmail
++$SHORT_DOC sendmail
++Executed busybox sendmail command
++$END
++
++$BUILTIN seq
++$FUNCTION busybox_builtin_seq
++$SHORT_DOC seq
++Executed busybox seq command
++$END
++
++$BUILTIN setarch
++$FUNCTION busybox_builtin_setarch
++$SHORT_DOC setarch
++Executed busybox setarch command
++$END
++
++$BUILTIN setconsole
++$FUNCTION busybox_builtin_setconsole
++$SHORT_DOC setconsole
++Executed busybox setconsole command
++$END
++
++$BUILTIN setfattr
++$FUNCTION busybox_builtin_setfattr
++$SHORT_DOC setfattr
++Executed busybox setfattr command
++$END
++
++$BUILTIN setfontsetkeycodes
++$FUNCTION busybox_builtin_setfontsetkeycodes
++$SHORT_DOC setfontsetkeycodes
++Executed busybox setfontsetkeycodes command
++$END
++
++$BUILTIN setlogcons
++$FUNCTION busybox_builtin_setlogcons
++$SHORT_DOC setlogcons
++Executed busybox setlogcons command
++$END
++
++$BUILTIN setpriv
++$FUNCTION busybox_builtin_setpriv
++$SHORT_DOC setpriv
++Executed busybox setpriv command
++$END
++
++$BUILTIN setserial
++$FUNCTION busybox_builtin_setserial
++$SHORT_DOC setserial
++Executed busybox setserial command
++$END
++
++$BUILTIN setsid
++$FUNCTION busybox_builtin_setsid
++$SHORT_DOC setsid
++Executed busybox setsid command
++$END
++
++$BUILTIN setuidgidsh
++$FUNCTION busybox_builtin_setuidgidsh
++$SHORT_DOC setuidgidsh
++Executed busybox setuidgidsh command
++$END
++
++$BUILTIN sha1sum
++$FUNCTION busybox_builtin_sha1sum
++$SHORT_DOC sha1sum
++Executed busybox sha1sum command
++$END
++
++$BUILTIN sha256sum
++$FUNCTION busybox_builtin_sha256sum
++$SHORT_DOC sha256sum
++Executed busybox sha256sum command
++$END
++
++$BUILTIN sha3sum
++$FUNCTION busybox_builtin_sha3sum
++$SHORT_DOC sha3sum
++Executed busybox sha3sum command
++$END
++
++$BUILTIN sha512sum
++$FUNCTION busybox_builtin_sha512sum
++$SHORT_DOC sha512sum
++Executed busybox sha512sum command
++$END
++
++$BUILTIN showkey
++$FUNCTION busybox_builtin_showkey
++$SHORT_DOC showkey
++Executed busybox showkey command
++$END
++
++$BUILTIN shredshuf
++$FUNCTION busybox_builtin_shredshuf
++$SHORT_DOC shredshuf
++Executed busybox shredshuf command
++$END
++
++$BUILTIN slattach
++$FUNCTION busybox_builtin_slattach
++$SHORT_DOC slattach
++Executed busybox slattach command
++$END
++
++$BUILTIN sleep
++$FUNCTION busybox_builtin_sleep
++$SHORT_DOC sleep
++Executed busybox sleep command
++$END
++
++$BUILTIN smemcap
++$FUNCTION busybox_builtin_smemcap
++$SHORT_DOC smemcap
++Executed busybox smemcap command
++$END
++
++$BUILTIN softlimit
++$FUNCTION busybox_builtin_softlimit
++$SHORT_DOC softlimit
++Executed busybox softlimit command
++$END
++
++$BUILTIN sort
++$FUNCTION busybox_builtin_sort
++$SHORT_DOC sort
++Executed busybox sort command
++$END
++
++$BUILTIN splitssl_client
++$FUNCTION busybox_builtin_splitssl_client
++$SHORT_DOC splitssl_client
++Executed busybox splitssl_client command
++$END
++
++$BUILTIN start-stop-daemon
++$FUNCTION busybox_builtin_start_stop_daemon
++$SHORT_DOC start-stop-daemon
++Executed busybox start-stop-daemon command
++$END
++
++$BUILTIN stat
++$FUNCTION busybox_builtin_stat
++$SHORT_DOC stat
++Executed busybox stat command
++$END
++
++$BUILTIN strings
++$FUNCTION busybox_builtin_strings
++$SHORT_DOC strings
++Executed busybox strings command
++$END
++
++$BUILTIN stty
++$FUNCTION busybox_builtin_stty
++$SHORT_DOC stty
++Executed busybox stty command
++$END
++
++$BUILTIN su
++$FUNCTION busybox_builtin_su
++$SHORT_DOC su
++Executed busybox su command
++$END
++
++$BUILTIN suloginsum
++$FUNCTION busybox_builtin_suloginsum
++$SHORT_DOC suloginsum
++Executed busybox suloginsum command
++$END
++
++$BUILTIN sv
++$FUNCTION busybox_builtin_sv
++$SHORT_DOC sv
++Executed busybox sv command
++$END
++
++$BUILTIN svc
++$FUNCTION busybox_builtin_svc
++$SHORT_DOC svc
++Executed busybox svc command
++$END
++
++$BUILTIN svlogd
++$FUNCTION busybox_builtin_svlogd
++$SHORT_DOC svlogd
++Executed busybox svlogd command
++$END
++
++$BUILTIN svok
++$FUNCTION busybox_builtin_svok
++$SHORT_DOC svok
++Executed busybox svok command
++$END
++
++$BUILTIN swapoff
++$FUNCTION busybox_builtin_swapoff
++$SHORT_DOC swapoff
++Executed busybox swapoff command
++$END
++
++$BUILTIN swapon
++$FUNCTION busybox_builtin_swapon
++$SHORT_DOC swapon
++Executed busybox swapon command
++$END
++
++$BUILTIN switch_root
++$FUNCTION busybox_builtin_switch_root
++$SHORT_DOC switch_root
++Executed busybox switch_root command
++$END
++
++$BUILTIN sync
++$FUNCTION busybox_builtin_sync
++$SHORT_DOC sync
++Executed busybox sync command
++$END
++
++$BUILTIN sysctl
++$FUNCTION busybox_builtin_sysctl
++$SHORT_DOC sysctl
++Executed busybox sysctl command
++$END
++
++$BUILTIN syslogd
++$FUNCTION busybox_builtin_syslogd
++$SHORT_DOC syslogd
++Executed busybox syslogd command
++$END
++
++$BUILTIN tac
++$FUNCTION busybox_builtin_tac
++$SHORT_DOC tac
++Executed busybox tac command
++$END
++
++$BUILTIN tail
++$FUNCTION busybox_builtin_tail
++$SHORT_DOC tail
++Executed busybox tail command
++$END
++
++$BUILTIN tar
++$FUNCTION busybox_builtin_tar
++$SHORT_DOC tar
++Executed busybox tar command
++$END
++
++$BUILTIN taskset
++$FUNCTION busybox_builtin_taskset
++$SHORT_DOC taskset
++Executed busybox taskset command
++$END
++
++$BUILTIN tc
++$FUNCTION busybox_builtin_tc
++$SHORT_DOC tc
++Executed busybox tc command
++$END
++
++$BUILTIN tcpsvd
++$FUNCTION busybox_builtin_tcpsvd
++$SHORT_DOC tcpsvd
++Executed busybox tcpsvd command
++$END
++
++$BUILTIN tee
++$FUNCTION busybox_builtin_tee
++$SHORT_DOC tee
++Executed busybox tee command
++$END
++
++$BUILTIN telnet
++$FUNCTION busybox_builtin_telnet
++$SHORT_DOC telnet
++Executed busybox telnet command
++$END
++
++$BUILTIN telnetd
++$FUNCTION busybox_builtin_telnetd
++$SHORT_DOC telnetd
++Executed busybox telnetd command
++$END
++
++$BUILTIN tftp
++$FUNCTION busybox_builtin_tftp
++$SHORT_DOC tftp
++Executed busybox tftp command
++$END
++
++$BUILTIN tftpd
++$FUNCTION busybox_builtin_tftpd
++$SHORT_DOC tftpd
++Executed busybox tftpd command
++$END
++
++$BUILTIN time
++$FUNCTION busybox_builtin_time
++$SHORT_DOC time
++Executed busybox time command
++$END
++
++$BUILTIN timeout
++$FUNCTION busybox_builtin_timeout
++$SHORT_DOC timeout
++Executed busybox timeout command
++$END
++
++$BUILTIN top
++$FUNCTION busybox_builtin_top
++$SHORT_DOC top
++Executed busybox top command
++$END
++
++$BUILTIN touch
++$FUNCTION busybox_builtin_touch
++$SHORT_DOC touch
++Executed busybox touch command
++$END
++
++$BUILTIN tr
++$FUNCTION busybox_builtin_tr
++$SHORT_DOC tr
++Executed busybox tr command
++$END
++
++$BUILTIN traceroute
++$FUNCTION busybox_builtin_traceroute
++$SHORT_DOC traceroute
++Executed busybox traceroute command
++$END
++
++$BUILTIN traceroute6
++$FUNCTION busybox_builtin_traceroute6
++$SHORT_DOC traceroute6
++Executed busybox traceroute6 command
++$END
++
++$BUILTIN true
++$FUNCTION busybox_builtin_true
++$SHORT_DOC true
++Executed busybox true command
++$END
++
++$BUILTIN truncate
++$FUNCTION busybox_builtin_truncate
++$SHORT_DOC truncate
++Executed busybox truncate command
++$END
++
++$BUILTIN ts
++$FUNCTION busybox_builtin_ts
++$SHORT_DOC ts
++Executed busybox ts command
++$END
++
++$BUILTIN tty
++$FUNCTION busybox_builtin_tty
++$SHORT_DOC tty
++Executed busybox tty command
++$END
++
++$BUILTIN ttysize
++$FUNCTION busybox_builtin_ttysize
++$SHORT_DOC ttysize
++Executed busybox ttysize command
++$END
++
++$BUILTIN tunctl
++$FUNCTION busybox_builtin_tunctl
++$SHORT_DOC tunctl
++Executed busybox tunctl command
++$END
++
++$BUILTIN ubiattach
++$FUNCTION busybox_builtin_ubiattach
++$SHORT_DOC ubiattach
++Executed busybox ubiattach command
++$END
++
++$BUILTIN ubidetach
++$FUNCTION busybox_builtin_ubidetach
++$SHORT_DOC ubidetach
++Executed busybox ubidetach command
++$END
++
++$BUILTIN ubimkvol
++$FUNCTION busybox_builtin_ubimkvol
++$SHORT_DOC ubimkvol
++Executed busybox ubimkvol command
++$END
++
++$BUILTIN ubirename
++$FUNCTION busybox_builtin_ubirename
++$SHORT_DOC ubirename
++Executed busybox ubirename command
++$END
++
++$BUILTIN ubirmvol
++$FUNCTION busybox_builtin_ubirmvol
++$SHORT_DOC ubirmvol
++Executed busybox ubirmvol command
++$END
++
++$BUILTIN ubirsvol
++$FUNCTION busybox_builtin_ubirsvol
++$SHORT_DOC ubirsvol
++Executed busybox ubirsvol command
++$END
++
++$BUILTIN ubiupdatevol
++$FUNCTION busybox_builtin_ubiupdatevol
++$SHORT_DOC ubiupdatevol
++Executed busybox ubiupdatevol command
++$END
++
++$BUILTIN udhcpc
++$FUNCTION busybox_builtin_udhcpc
++$SHORT_DOC udhcpc
++Executed busybox udhcpc command
++$END
++
++$BUILTIN udhcpc6
++$FUNCTION busybox_builtin_udhcpc6
++$SHORT_DOC udhcpc6
++Executed busybox udhcpc6 command
++$END
++
++$BUILTIN udhcpd
++$FUNCTION busybox_builtin_udhcpd
++$SHORT_DOC udhcpd
++Executed busybox udhcpd command
++$END
++
++$BUILTIN udpsvd
++$FUNCTION busybox_builtin_udpsvd
++$SHORT_DOC udpsvd
++Executed busybox udpsvd command
++$END
++
++$BUILTIN uevent
++$FUNCTION busybox_builtin_uevent
++$SHORT_DOC uevent
++Executed busybox uevent command
++$END
++
++$BUILTIN umount
++$FUNCTION busybox_builtin_umount
++$SHORT_DOC umount
++Executed busybox umount command
++$END
++
++$BUILTIN uname
++$FUNCTION busybox_builtin_uname
++$SHORT_DOC uname
++Executed busybox uname command
++$END
++
++$BUILTIN unexpand
++$FUNCTION busybox_builtin_unexpand
++$SHORT_DOC unexpand
++Executed busybox unexpand command
++$END
++
++$BUILTIN uniq
++$FUNCTION busybox_builtin_uniq
++$SHORT_DOC uniq
++Executed busybox uniq command
++$END
++
++$BUILTIN unix2dos
++$FUNCTION busybox_builtin_unix2dos
++$SHORT_DOC unix2dos
++Executed busybox unix2dos command
++$END
++
++$BUILTIN unlink
++$FUNCTION busybox_builtin_unlink
++$SHORT_DOC unlink
++Executed busybox unlink command
++$END
++
++$BUILTIN unlzma
++$FUNCTION busybox_builtin_unlzma
++$SHORT_DOC unlzma
++Executed busybox unlzma command
++$END
++
++$BUILTIN unshare
++$FUNCTION busybox_builtin_unshare
++$SHORT_DOC unshare
++Executed busybox unshare command
++$END
++
++$BUILTIN unxz
++$FUNCTION busybox_builtin_unxz
++$SHORT_DOC unxz
++Executed busybox unxz command
++$END
++
++$BUILTIN unzip
++$FUNCTION busybox_builtin_unzip
++$SHORT_DOC unzip
++Executed busybox unzip command
++$END
++
++$BUILTIN uptime
++$FUNCTION busybox_builtin_uptime
++$SHORT_DOC uptime
++Executed busybox uptime command
++$END
++
++$BUILTIN users
++$FUNCTION busybox_builtin_users
++$SHORT_DOC users
++Executed busybox users command
++$END
++
++$BUILTIN usleep
++$FUNCTION busybox_builtin_usleep
++$SHORT_DOC usleep
++Executed busybox usleep command
++$END
++
++$BUILTIN uudecode
++$FUNCTION busybox_builtin_uudecode
++$SHORT_DOC uudecode
++Executed busybox uudecode command
++$END
++
++$BUILTIN uuencode
++$FUNCTION busybox_builtin_uuencode
++$SHORT_DOC uuencode
++Executed busybox uuencode command
++$END
++
++$BUILTIN vconfig
++$FUNCTION busybox_builtin_vconfig
++$SHORT_DOC vconfig
++Executed busybox vconfig command
++$END
++
++$BUILTIN vi
++$FUNCTION busybox_builtin_vi
++$SHORT_DOC vi
++Executed busybox vi command
++$END
++
++$BUILTIN vlock
++$FUNCTION busybox_builtin_vlock
++$SHORT_DOC vlock
++Executed busybox vlock command
++$END
++
++$BUILTIN volname
++$FUNCTION busybox_builtin_volname
++$SHORT_DOC volname
++Executed busybox volname command
++$END
++
++$BUILTIN w
++$FUNCTION busybox_builtin_w
++$SHORT_DOC w
++Executed busybox w command
++$END
++
++$BUILTIN wall
++$FUNCTION busybox_builtin_wall
++$SHORT_DOC wall
++Executed busybox wall command
++$END
++
++$BUILTIN watch
++$FUNCTION busybox_builtin_watch
++$SHORT_DOC watch
++Executed busybox watch command
++$END
++
++$BUILTIN watchdog
++$FUNCTION busybox_builtin_watchdog
++$SHORT_DOC watchdog
++Executed busybox watchdog command
++$END
++
++$BUILTIN wc
++$FUNCTION busybox_builtin_wc
++$SHORT_DOC wc
++Executed busybox wc command
++$END
++
++$BUILTIN wget
++$FUNCTION busybox_builtin_wget
++$SHORT_DOC wget
++Executed busybox wget command
++$END
++
++$BUILTIN which
++$FUNCTION busybox_builtin_which
++$SHORT_DOC which
++Executed busybox which command
++$END
++
++$BUILTIN who
++$FUNCTION busybox_builtin_who
++$SHORT_DOC who
++Executed busybox who command
++$END
++
++$BUILTIN whoami
++$FUNCTION busybox_builtin_whoami
++$SHORT_DOC whoami
++Executed busybox whoami command
++$END
++
++$BUILTIN whois
++$FUNCTION busybox_builtin_whois
++$SHORT_DOC whois
++Executed busybox whois command
++$END
++
++$BUILTIN xargs
++$FUNCTION busybox_builtin_xargs
++$SHORT_DOC xargs
++Executed busybox xargs command
++$END
++
++$BUILTIN xxd
++$FUNCTION busybox_builtin_xxd
++$SHORT_DOC xxd
++Executed busybox xxd command
++$END
++
++$BUILTIN xz
++$FUNCTION busybox_builtin_xz
++$SHORT_DOC xz
++Executed busybox xz command
++$END
++
++$BUILTIN xzcat
++$FUNCTION busybox_builtin_xzcat
++$SHORT_DOC xzcat
++Executed busybox xzcat command
++$END
++
++$BUILTIN yes
++$FUNCTION busybox_builtin_yes
++$SHORT_DOC yes
++Executed busybox yes command
++$END
++
++$BUILTIN zcat
++$FUNCTION busybox_builtin_zcat
++$SHORT_DOC zcat
++Executed busybox zcat command
++$END
++
++$BUILTIN zcip
++$FUNCTION busybox_builtin_zci
++$SHORT_DOC zci command
++Executed busybox zci
++$END
++
 +#ifndef _GNU_SOURCE
 +#  define _GNU_SOURCE 1
 +#endif
@@ -89,10 +2201,9 @@ index 00000000..efa5819d
 +extern int bb_lbb_main(char **argv);
 +
 +int
-+busybox_builtin (list)
-+     WORD_LIST *list;
++busybox_builtin_base (arr)
++     ARRAY *arr;
 +{
-+  ARRAY* arr = NULL; 
 +  char** argv = NULL; 
 +  char* argv_fallback[2] = {"busybox", 0};
 +  int pipefd[2];
@@ -100,7 +2211,6 @@ index 00000000..efa5819d
 +  pid_t pid;
 +  int res;
 + 
-+  arr = array_from_word_list(list);
 +  array_shift_element(arr, "busybox");
 +  argv = array_to_argv(arr, NULL);
 +
@@ -142,6 +2252,394 @@ index 00000000..efa5819d
 +
 +  return res;
 +}
++
++int
++busybox_builtin (list)
++     WORD_LIST *list;
++{
++  ARRAY* arr = array_from_word_list(list);
++  return busybox_builtin_base(arr);
++}
++
++int
++busybox_builtin_func_base (list, func)
++     WORD_LIST *list;
++     char* func;
++{
++    ARRAY* arr = array_from_word_list(list);
++
++    if (!arr) {
++        arr = array_create();
++    }
++
++    array_shift_element(arr, func);
++    return busybox_builtin_base(arr);
++}
++
++#define BUSYBOX_BUILTIN(func, applet) \
++    int \
++    busybox_builtin_ ## func (list) \
++        WORD_LIST *list; \
++    { \
++        return busybox_builtin_func_base(list, applet); \
++    }
++
++BUSYBOX_BUILTIN(acpid, "acpid")
++BUSYBOX_BUILTIN(add_shell, "add-shell")
++BUSYBOX_BUILTIN(addgroup, "addgroup")
++BUSYBOX_BUILTIN(adduser, "adduser")
++BUSYBOX_BUILTIN(adjtimex, "adjtimex")
++BUSYBOX_BUILTIN(arch, "arch")
++BUSYBOX_BUILTIN(arparping, "arparping")
++BUSYBOX_BUILTIN(ascii, "ascii")
++BUSYBOX_BUILTIN(ash, "ash")
++BUSYBOX_BUILTIN(awk, "awk")
++BUSYBOX_BUILTIN(base32, "base32")
++BUSYBOX_BUILTIN(base64, "base64")
++BUSYBOX_BUILTIN(basename, "basename")
++BUSYBOX_BUILTIN(bc, "bc")
++BUSYBOX_BUILTIN(beepblkdiscard, "beepblkdiscard")
++BUSYBOX_BUILTIN(blkid, "blkid")
++BUSYBOX_BUILTIN(blockdev, "blockdev")
++BUSYBOX_BUILTIN(bootchartd, "bootchartd")
++BUSYBOX_BUILTIN(brctl, "brctl")
++BUSYBOX_BUILTIN(bunzip2, "bunzip2")
++BUSYBOX_BUILTIN(bzcatbzip2, "bzcatbzip2")
++BUSYBOX_BUILTIN(cal, "cal")
++BUSYBOX_BUILTIN(cat, "cat")
++BUSYBOX_BUILTIN(chat, "chat")
++BUSYBOX_BUILTIN(chattr, "chattr")
++BUSYBOX_BUILTIN(chgrp, "chgrp")
++BUSYBOX_BUILTIN(chmod, "chmod")
++BUSYBOX_BUILTIN(chown, "chown")
++BUSYBOX_BUILTIN(chpasswdchpst, "chpasswdchpst")
++BUSYBOX_BUILTIN(chroot, "chroot")
++BUSYBOX_BUILTIN(chrt, "chrt")
++BUSYBOX_BUILTIN(chvt, "chvt")
++BUSYBOX_BUILTIN(cksum, "cksum")
++BUSYBOX_BUILTIN(clear, "clear")
++BUSYBOX_BUILTIN(cmp, "cmp")
++BUSYBOX_BUILTIN(comm, "comm")
++BUSYBOX_BUILTIN(conspy, "conspy")
++BUSYBOX_BUILTIN(cpcpio, "cpcpio")
++BUSYBOX_BUILTIN(crc32, "crc32")
++BUSYBOX_BUILTIN(crond, "crond")
++BUSYBOX_BUILTIN(crontab, "crontab")
++BUSYBOX_BUILTIN(cryptpw, "cryptpw")
++BUSYBOX_BUILTIN(cttyhack, "cttyhack")
++BUSYBOX_BUILTIN(cut, "cut")
++BUSYBOX_BUILTIN(date, "date")
++BUSYBOX_BUILTIN(dcdd, "dcdd")
++BUSYBOX_BUILTIN(deallocvt, "deallocvt")
++BUSYBOX_BUILTIN(delgroup, "delgroup")
++BUSYBOX_BUILTIN(deluser, "deluser")
++BUSYBOX_BUILTIN(depmod, "depmod")
++BUSYBOX_BUILTIN(devmem, "devmem")
++BUSYBOX_BUILTIN(df, "df")
++BUSYBOX_BUILTIN(dhcprelaydiff, "dhcprelaydiff")
++BUSYBOX_BUILTIN(dirname, "dirname")
++BUSYBOX_BUILTIN(dmesg, "dmesg")
++BUSYBOX_BUILTIN(dnsd, "dnsd")
++BUSYBOX_BUILTIN(dnsdomainname, "dnsdomainname")
++BUSYBOX_BUILTIN(dos2unix, "dos2unix")
++BUSYBOX_BUILTIN(dpkgdpkg_deb, "dpkgdpkg-deb")
++BUSYBOX_BUILTIN(du, "du")
++BUSYBOX_BUILTIN(dumpkmap, "dumpkmap")
++BUSYBOX_BUILTIN(dumpleases, "dumpleases")
++BUSYBOX_BUILTIN(echo, "echo")
++BUSYBOX_BUILTIN(ed, "ed")
++BUSYBOX_BUILTIN(egrep, "egrep")
++BUSYBOX_BUILTIN(eject, "eject")
++BUSYBOX_BUILTIN(envenvdir, "envenvdir")
++BUSYBOX_BUILTIN(envuidgid, "envuidgid")
++BUSYBOX_BUILTIN(ether_wake, "ether-wake")
++BUSYBOX_BUILTIN(expand, "expand")
++BUSYBOX_BUILTIN(expr, "expr")
++BUSYBOX_BUILTIN(factor, "factor")
++BUSYBOX_BUILTIN(fakeidentdfallocate, "fakeidentdfallocate")
++BUSYBOX_BUILTIN(false, "false")
++BUSYBOX_BUILTIN(fatattr, "fatattr")
++BUSYBOX_BUILTIN(fbset, "fbset")
++BUSYBOX_BUILTIN(fbsplash, "fbsplash")
++BUSYBOX_BUILTIN(fdflush, "fdflush")
++BUSYBOX_BUILTIN(fdformatfdisk, "fdformatfdisk")
++BUSYBOX_BUILTIN(fgconsole, "fgconsole")
++BUSYBOX_BUILTIN(fgrep, "fgrep")
++BUSYBOX_BUILTIN(find, "find")
++BUSYBOX_BUILTIN(findfs, "findfs")
++BUSYBOX_BUILTIN(flock, "flock")
++BUSYBOX_BUILTIN(fold, "fold")
++BUSYBOX_BUILTIN(freefreeramdisk, "freefreeramdisk")
++BUSYBOX_BUILTIN(fsck, "fsck")
++BUSYBOX_BUILTIN(fsck_minix, "fsck.minix")
++BUSYBOX_BUILTIN(fsfreeze, "fsfreeze")
++BUSYBOX_BUILTIN(fstrim, "fstrim")
++BUSYBOX_BUILTIN(fsync, "fsync")
++BUSYBOX_BUILTIN(ftpdftpget, "ftpdftpget")
++BUSYBOX_BUILTIN(ftpput, "ftpput")
++BUSYBOX_BUILTIN(fuser, "fuser")
++BUSYBOX_BUILTIN(getopt, "getopt")
++BUSYBOX_BUILTIN(getty, "getty")
++BUSYBOX_BUILTIN(grep, "grep")
++BUSYBOX_BUILTIN(groups, "groups")
++BUSYBOX_BUILTIN(gunzipgzip, "gunzipgzip")
++BUSYBOX_BUILTIN(halt, "halt")
++BUSYBOX_BUILTIN(hd, "hd")
++BUSYBOX_BUILTIN(hdparm, "hdparm")
++BUSYBOX_BUILTIN(head, "head")
++BUSYBOX_BUILTIN(hexdump, "hexdump")
++BUSYBOX_BUILTIN(hexedit, "hexedit")
++BUSYBOX_BUILTIN(hostidhostname, "hostidhostname")
++BUSYBOX_BUILTIN(httpd, "httpd")
++BUSYBOX_BUILTIN(hush, "hush")
++BUSYBOX_BUILTIN(hwclock, "hwclock")
++BUSYBOX_BUILTIN(i2cdetect, "i2cdetect")
++BUSYBOX_BUILTIN(i2cdump, "i2cdump")
++BUSYBOX_BUILTIN(i2cgeti2cset, "i2cgeti2cset")
++BUSYBOX_BUILTIN(i2ctransfer, "i2ctransfer")
++BUSYBOX_BUILTIN(id, "id")
++BUSYBOX_BUILTIN(ifconfig, "ifconfig")
++BUSYBOX_BUILTIN(ifdown, "ifdown")
++BUSYBOX_BUILTIN(ifenslave, "ifenslave")
++BUSYBOX_BUILTIN(ifplugdifup, "ifplugdifup")
++BUSYBOX_BUILTIN(inetd, "inetd")
++BUSYBOX_BUILTIN(init, "init")
++BUSYBOX_BUILTIN(insmod, "insmod")
++BUSYBOX_BUILTIN(install, "install")
++BUSYBOX_BUILTIN(ionice, "ionice")
++BUSYBOX_BUILTIN(iostat, "iostat")
++BUSYBOX_BUILTIN(ip, "ip")
++BUSYBOX_BUILTIN(ipaddripcalc, "ipaddripcalc")
++BUSYBOX_BUILTIN(ipcrm, "ipcrm")
++BUSYBOX_BUILTIN(ipcs, "ipcs")
++BUSYBOX_BUILTIN(iplink, "iplink")
++BUSYBOX_BUILTIN(ipneigh, "ipneigh")
++BUSYBOX_BUILTIN(iproute, "iproute")
++BUSYBOX_BUILTIN(iprule, "iprule")
++BUSYBOX_BUILTIN(iptunnelkbd_mode, "iptunnelkbd_mode")
++BUSYBOX_BUILTIN(kill, "kill")
++BUSYBOX_BUILTIN(killall, "killall")
++BUSYBOX_BUILTIN(killall5, "killall5")
++BUSYBOX_BUILTIN(klogd, "klogd")
++BUSYBOX_BUILTIN(last, "last")
++BUSYBOX_BUILTIN(less, "less")
++BUSYBOX_BUILTIN(linklinux32, "linklinux32")
++BUSYBOX_BUILTIN(linux64, "linux64")
++BUSYBOX_BUILTIN(linuxrc, "linuxrc")
++BUSYBOX_BUILTIN(ln, "ln")
++BUSYBOX_BUILTIN(loadfont, "loadfont")
++BUSYBOX_BUILTIN(loadkmap, "loadkmap")
++BUSYBOX_BUILTIN(loggerlogin, "loggerlogin")
++BUSYBOX_BUILTIN(logname, "logname")
++BUSYBOX_BUILTIN(logread, "logread")
++BUSYBOX_BUILTIN(losetup, "losetup")
++BUSYBOX_BUILTIN(lpd, "lpd")
++BUSYBOX_BUILTIN(lpq, "lpq")
++BUSYBOX_BUILTIN(lpr, "lpr")
++BUSYBOX_BUILTIN(ls, "ls")
++BUSYBOX_BUILTIN(lsattrlsmod, "lsattrlsmod")
++BUSYBOX_BUILTIN(lsof, "lsof")
++BUSYBOX_BUILTIN(lspci, "lspci")
++BUSYBOX_BUILTIN(lsscsi, "lsscsi")
++BUSYBOX_BUILTIN(lsusb, "lsusb")
++BUSYBOX_BUILTIN(lzcat, "lzcat")
++BUSYBOX_BUILTIN(lzma, "lzma")
++BUSYBOX_BUILTIN(lzop, "lzop")
++BUSYBOX_BUILTIN(makedevsmakemime, "makedevsmakemime")
++BUSYBOX_BUILTIN(man, "man")
++BUSYBOX_BUILTIN(md5sum, "md5sum")
++BUSYBOX_BUILTIN(mdev, "mdev")
++BUSYBOX_BUILTIN(mesg, "mesg")
++BUSYBOX_BUILTIN(microcom, "microcom")
++BUSYBOX_BUILTIN(mim, "mim")
++BUSYBOX_BUILTIN(mkdirmkdosfs, "mkdirmkdosfs")
++BUSYBOX_BUILTIN(mke2fs, "mke2fs")
++BUSYBOX_BUILTIN(mkfifo, "mkfifo")
++BUSYBOX_BUILTIN(mkfs_ext2, "mkfs.ext2")
++BUSYBOX_BUILTIN(mkfs_minix, "mkfs.minix")
++BUSYBOX_BUILTIN(mkfs_vfatmknod, "mkfs.vfatmknod")
++BUSYBOX_BUILTIN(mkpasswd, "mkpasswd")
++BUSYBOX_BUILTIN(mkswap, "mkswap")
++BUSYBOX_BUILTIN(mktemp, "mktemp")
++BUSYBOX_BUILTIN(modinfo, "modinfo")
++BUSYBOX_BUILTIN(modprobe, "modprobe")
++BUSYBOX_BUILTIN(more, "more")
++BUSYBOX_BUILTIN(mountmountpoint, "mountmountpoint")
++BUSYBOX_BUILTIN(mpstat, "mpstat")
++BUSYBOX_BUILTIN(mt, "mt")
++BUSYBOX_BUILTIN(mv, "mv")
++BUSYBOX_BUILTIN(nameif, "nameif")
++BUSYBOX_BUILTIN(nanddump, "nanddump")
++BUSYBOX_BUILTIN(nandwritenbd_client, "nandwritenbd-client")
++BUSYBOX_BUILTIN(nc, "nc")
++BUSYBOX_BUILTIN(netstat, "netstat")
++BUSYBOX_BUILTIN(nice, "nice")
++BUSYBOX_BUILTIN(nl, "nl")
++BUSYBOX_BUILTIN(nmeter, "nmeter")
++BUSYBOX_BUILTIN(nohup, "nohup")
++BUSYBOX_BUILTIN(nologinnproc, "nologinnproc")
++BUSYBOX_BUILTIN(nsenter, "nsenter")
++BUSYBOX_BUILTIN(nslookup, "nslookup")
++BUSYBOX_BUILTIN(ntpd, "ntpd")
++BUSYBOX_BUILTIN(od, "od")
++BUSYBOX_BUILTIN(openvt, "openvt")
++BUSYBOX_BUILTIN(partprobe, "partprobe")
++BUSYBOX_BUILTIN(passwdpaste, "passwdpaste")
++BUSYBOX_BUILTIN(patch, "patch")
++BUSYBOX_BUILTIN(pgrep, "pgrep")
++BUSYBOX_BUILTIN(pidof, "pidof")
++BUSYBOX_BUILTIN(ping, "ping")
++BUSYBOX_BUILTIN(ping6, "ping6")
++BUSYBOX_BUILTIN(pipe_progresspivot_root, "pipe_progresspivot_root")
++BUSYBOX_BUILTIN(pkill, "pkill")
++BUSYBOX_BUILTIN(pmap, "pmap")
++BUSYBOX_BUILTIN(popmaildir, "popmaildir")
++BUSYBOX_BUILTIN(poweroff, "poweroff")
++BUSYBOX_BUILTIN(powertopprintenv, "powertopprintenv")
++BUSYBOX_BUILTIN(printf, "printf")
++BUSYBOX_BUILTIN(ps, "ps")
++BUSYBOX_BUILTIN(pscan, "pscan")
++BUSYBOX_BUILTIN(pstree, "pstree")
++BUSYBOX_BUILTIN(pwd, "pwd")
++BUSYBOX_BUILTIN(pwdx, "pwdx")
++BUSYBOX_BUILTIN(raidautorunrdate, "raidautorunrdate")
++BUSYBOX_BUILTIN(rdev, "rdev")
++BUSYBOX_BUILTIN(readahead, "readahead")
++BUSYBOX_BUILTIN(readlink, "readlink")
++BUSYBOX_BUILTIN(readprofile, "readprofile")
++BUSYBOX_BUILTIN(realpath, "realpath")
++BUSYBOX_BUILTIN(rebootreformime, "rebootreformime")
++BUSYBOX_BUILTIN(remove_shell, "remove-shell")
++BUSYBOX_BUILTIN(renice, "renice")
++BUSYBOX_BUILTIN(reset, "reset")
++BUSYBOX_BUILTIN(resize, "resize")
++BUSYBOX_BUILTIN(resume, "resume")
++BUSYBOX_BUILTIN(rev, "rev")
++BUSYBOX_BUILTIN(rmrmdir, "rmrmdir")
++BUSYBOX_BUILTIN(rmmod, "rmmod")
++BUSYBOX_BUILTIN(route, "route")
++BUSYBOX_BUILTIN(rpm, "rpm")
++BUSYBOX_BUILTIN(rpm2cpio, "rpm2cpio")
++BUSYBOX_BUILTIN(rtcwake, "rtcwake")
++BUSYBOX_BUILTIN(run_initrun_parts, "run-initrun-parts")
++BUSYBOX_BUILTIN(runlevel, "runlevel")
++BUSYBOX_BUILTIN(runsv, "runsv")
++BUSYBOX_BUILTIN(runsvdir, "runsvdir")
++BUSYBOX_BUILTIN(rx, "rx")
++BUSYBOX_BUILTIN(script, "script")
++BUSYBOX_BUILTIN(scriptreplaysed, "scriptreplaysed")
++BUSYBOX_BUILTIN(sendmail, "sendmail")
++BUSYBOX_BUILTIN(seq, "seq")
++BUSYBOX_BUILTIN(setarch, "setarch")
++BUSYBOX_BUILTIN(setconsole, "setconsole")
++BUSYBOX_BUILTIN(setfattr, "setfattr")
++BUSYBOX_BUILTIN(setfontsetkeycodes, "setfontsetkeycodes")
++BUSYBOX_BUILTIN(setlogcons, "setlogcons")
++BUSYBOX_BUILTIN(setpriv, "setpriv")
++BUSYBOX_BUILTIN(setserial, "setserial")
++BUSYBOX_BUILTIN(setsid, "setsid")
++BUSYBOX_BUILTIN(setuidgidsh, "setuidgidsh")
++BUSYBOX_BUILTIN(sha1sum, "sha1sum")
++BUSYBOX_BUILTIN(sha256sum, "sha256sum")
++BUSYBOX_BUILTIN(sha3sum, "sha3sum")
++BUSYBOX_BUILTIN(sha512sum, "sha512sum")
++BUSYBOX_BUILTIN(showkey, "showkey")
++BUSYBOX_BUILTIN(shredshuf, "shredshuf")
++BUSYBOX_BUILTIN(slattach, "slattach")
++BUSYBOX_BUILTIN(sleep, "sleep")
++BUSYBOX_BUILTIN(smemcap, "smemcap")
++BUSYBOX_BUILTIN(softlimit, "softlimit")
++BUSYBOX_BUILTIN(sort, "sort")
++BUSYBOX_BUILTIN(splitssl_client, "splitssl_client")
++BUSYBOX_BUILTIN(start_stop_daemon, "start-stop-daemon")
++BUSYBOX_BUILTIN(stat, "stat")
++BUSYBOX_BUILTIN(strings, "strings")
++BUSYBOX_BUILTIN(stty, "stty")
++BUSYBOX_BUILTIN(su, "su")
++BUSYBOX_BUILTIN(suloginsum, "suloginsum")
++BUSYBOX_BUILTIN(sv, "sv")
++BUSYBOX_BUILTIN(svc, "svc")
++BUSYBOX_BUILTIN(svlogd, "svlogd")
++BUSYBOX_BUILTIN(svok, "svok")
++BUSYBOX_BUILTIN(swapoff, "swapoff")
++BUSYBOX_BUILTIN(swapon, "swapon")
++BUSYBOX_BUILTIN(switch_root, "switch_root")
++BUSYBOX_BUILTIN(sync, "sync")
++BUSYBOX_BUILTIN(sysctl, "sysctl")
++BUSYBOX_BUILTIN(syslogd, "syslogd")
++BUSYBOX_BUILTIN(tac, "tac")
++BUSYBOX_BUILTIN(tail, "tail")
++BUSYBOX_BUILTIN(tar, "tar")
++BUSYBOX_BUILTIN(taskset, "taskset")
++BUSYBOX_BUILTIN(tc, "tc")
++BUSYBOX_BUILTIN(tcpsvd, "tcpsvd")
++BUSYBOX_BUILTIN(tee, "tee")
++BUSYBOX_BUILTIN(telnet, "telnet")
++BUSYBOX_BUILTIN(telnetd, "telnetd")
++BUSYBOX_BUILTIN(test, "test")
++BUSYBOX_BUILTIN(tftp, "tftp")
++BUSYBOX_BUILTIN(tftpd, "tftpd")
++BUSYBOX_BUILTIN(time, "time")
++BUSYBOX_BUILTIN(timeout, "timeout")
++BUSYBOX_BUILTIN(top, "top")
++BUSYBOX_BUILTIN(touch, "touch")
++BUSYBOX_BUILTIN(tr, "tr")
++BUSYBOX_BUILTIN(traceroute, "traceroute")
++BUSYBOX_BUILTIN(traceroute6, "traceroute6")
++BUSYBOX_BUILTIN(true, "true")
++BUSYBOX_BUILTIN(truncate, "truncate")
++BUSYBOX_BUILTIN(ts, "ts")
++BUSYBOX_BUILTIN(tty, "tty")
++BUSYBOX_BUILTIN(ttysize, "ttysize")
++BUSYBOX_BUILTIN(tunctl, "tunctl")
++BUSYBOX_BUILTIN(ubiattach, "ubiattach")
++BUSYBOX_BUILTIN(ubidetach, "ubidetach")
++BUSYBOX_BUILTIN(ubimkvol, "ubimkvol")
++BUSYBOX_BUILTIN(ubirename, "ubirename")
++BUSYBOX_BUILTIN(ubirmvol, "ubirmvol")
++BUSYBOX_BUILTIN(ubirsvol, "ubirsvol")
++BUSYBOX_BUILTIN(ubiupdatevol, "ubiupdatevol")
++BUSYBOX_BUILTIN(udhcpc, "udhcpc")
++BUSYBOX_BUILTIN(udhcpc6, "udhcpc6")
++BUSYBOX_BUILTIN(udhcpd, "udhcpd")
++BUSYBOX_BUILTIN(udpsvd, "udpsvd")
++BUSYBOX_BUILTIN(uevent, "uevent")
++BUSYBOX_BUILTIN(umount, "umount")
++BUSYBOX_BUILTIN(uname, "uname")
++BUSYBOX_BUILTIN(unexpand, "unexpand")
++BUSYBOX_BUILTIN(uniq, "uniq")
++BUSYBOX_BUILTIN(unix2dos, "unix2dos")
++BUSYBOX_BUILTIN(unlink, "unlink")
++BUSYBOX_BUILTIN(unlzma, "unlzma")
++BUSYBOX_BUILTIN(unshare, "unshare")
++BUSYBOX_BUILTIN(unxz, "unxz")
++BUSYBOX_BUILTIN(unzip, "unzip")
++BUSYBOX_BUILTIN(uptime, "uptime")
++BUSYBOX_BUILTIN(users, "users")
++BUSYBOX_BUILTIN(usleep, "usleep")
++BUSYBOX_BUILTIN(uudecode, "uudecode")
++BUSYBOX_BUILTIN(uuencode, "uuencode")
++BUSYBOX_BUILTIN(vconfig, "vconfig")
++BUSYBOX_BUILTIN(vi, "vi")
++BUSYBOX_BUILTIN(vlock, "vlock")
++BUSYBOX_BUILTIN(volname, "volname")
++BUSYBOX_BUILTIN(w, "w")
++BUSYBOX_BUILTIN(wall, "wall")
++BUSYBOX_BUILTIN(watch, "watch")
++BUSYBOX_BUILTIN(watchdog, "watchdog")
++BUSYBOX_BUILTIN(wc, "wc")
++BUSYBOX_BUILTIN(wget, "wget")
++BUSYBOX_BUILTIN(which, "which")
++BUSYBOX_BUILTIN(who, "who")
++BUSYBOX_BUILTIN(whoami, "whoami")
++BUSYBOX_BUILTIN(whois, "whois")
++BUSYBOX_BUILTIN(xargs, "xargs")
++BUSYBOX_BUILTIN(xxd, "xxd")
++BUSYBOX_BUILTIN(xz, "xz")
++BUSYBOX_BUILTIN(xzcat, "xzcat")
++BUSYBOX_BUILTIN(yes, "yes")
++BUSYBOX_BUILTIN(zcat, "zcat")
++BUSYBOX_BUILTIN(zcip, "zcip")
 \ No newline at end of file
 diff --git a/support/mkversion.sh b/support/mkversion.sh
 index 5960a425..7b0c8a9c 100755
