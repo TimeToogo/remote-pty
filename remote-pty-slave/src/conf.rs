@@ -77,7 +77,7 @@ impl Conf {
         let state = self.state.lock().unwrap();
 
         #[cfg(target_os = "linux")]
-        return state.thread_id == unsafe { libc::gettid() } as _;
+        return state.thread_id == unsafe { libc::pthread_self() } as _;
 
         #[cfg(not(target_os = "linux"))]
         return true;
@@ -96,7 +96,7 @@ impl State {
             stdout_inode: None,
             //
             #[cfg(target_os = "linux")]
-            thread_id: unsafe { libc::gettid() } as _,
+            thread_id: unsafe { libc::pthread_self() } as _,
             #[cfg(not(target_os = "linux"))]
             thread_id: 0, // not implemented
         }
