@@ -32,10 +32,10 @@ index b349e93c..8396f8fd 100644
 \ No newline at end of file
 diff --git a/builtins/busybox.def b/builtins/busybox.def
 new file mode 100644
-index 00000000..2e412b2a
+index 00000000..fc9f6737
 --- /dev/null
 +++ b/builtins/busybox.def
-@@ -0,0 +1,2604 @@
+@@ -0,0 +1,2615 @@
 +This file is busybox.def, from which is created busybox.c.
 +It implements the builtin "busybox" in Bash.
 +
@@ -77,6 +77,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN add-shell
++$DOCNAME add_shell
 +$FUNCTION busybox_builtin_add_shell
 +$SHORT_DOC add-shell
 +Executed busybox add-shell command
@@ -419,6 +420,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN dpkgdpkg-deb
++$DOCNAME dpkgdpkg_deb
 +$FUNCTION busybox_builtin_dpkgdpkg_deb
 +$SHORT_DOC dpkgdpkg-deb
 +Executed busybox dpkgdpkg-deb command
@@ -473,6 +475,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN ether-wake
++$DOCNAME ether_wake
 +$FUNCTION busybox_builtin_ether_wake
 +$SHORT_DOC ether-wake
 +Executed busybox ether-wake command
@@ -587,6 +590,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN fsck.minix
++$DOCNAME fsck_minix
 +$FUNCTION busybox_builtin_fsck_minix
 +$SHORT_DOC fsck.minix
 +Executed busybox fsck.minix command
@@ -1079,18 +1083,21 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN mkfs.ext2
++$DOCNAME mkfs_ext2
 +$FUNCTION busybox_builtin_mkfs_ext2
 +$SHORT_DOC mkfs.ext2
 +Executed busybox mkfs.ext2 command
 +$END
 +
 +$BUILTIN mkfs.minix
++$DOCNAME mkfs_minix
 +$FUNCTION busybox_builtin_mkfs_minix
 +$SHORT_DOC mkfs.minix
 +Executed busybox mkfs.minix command
 +$END
 +
 +$BUILTIN mkfs.vfatmknod
++$DOCNAME mkfs_vfatmknod
 +$FUNCTION busybox_builtin_mkfs_vfatmknod
 +$SHORT_DOC mkfs.vfatmknod
 +Executed busybox mkfs.vfatmknod command
@@ -1169,6 +1176,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN nandwritenbd-client
++$DOCNAME nandwritenbd_client
 +$FUNCTION busybox_builtin_nandwritenbd_client
 +$SHORT_DOC nandwritenbd-client
 +Executed busybox nandwritenbd-client command
@@ -1403,6 +1411,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN remove-shell
++$DOCNAME remove_shell
 +$FUNCTION busybox_builtin_remove_shell
 +$SHORT_DOC remove-shell
 +Executed busybox remove-shell command
@@ -1475,6 +1484,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN run-initrun-parts
++$DOCNAME run_initrun_parts
 +$FUNCTION busybox_builtin_run_initrun_parts
 +$SHORT_DOC run-initrun-parts
 +Executed busybox run-initrun-parts command
@@ -1655,6 +1665,7 @@ index 00000000..2e412b2a
 +$END
 +
 +$BUILTIN start-stop-daemon
++$DOCNAME start_stop_daemon
 +$FUNCTION busybox_builtin_start_stop_daemon
 +$SHORT_DOC start-stop-daemon
 +Executed busybox start-stop-daemon command
