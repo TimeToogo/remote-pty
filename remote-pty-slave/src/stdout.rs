@@ -34,7 +34,7 @@ extern "C" {
 }
 
 #[cfg(target_os = "linux")]
-static mut STDOUT_STREAM_THREAD: Option<JoinHandle<()>> = Option::None;
+static mut STDOUT_STREAM_THREAD: Option<(JoinHandle<()>, libc::c_int)> = Option::None;
 
 // this replaces the stdout fd's with a fd which is streamed to the remote master
 pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: Option<&State>) {
@@ -46,7 +46,7 @@ pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: 
         .unwrap_or_else(|| conf.stdout_fds.clone());
 
     // override existing stdout fd's with a pipe and keep the read end
-    let (mut stdout, inode) = unsafe {
+    let (mut stdout, read_fd, inode) = unsafe {
         let mut fds = [0 as libc::c_int; 2];
 
         #[cfg(target_os = "linux")]
@@ -87,7 +87,7 @@ pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: 
             Err(_) => return,
         };
 
-        (File::from_raw_fd(read_fd), inode)
+        (File::from_raw_fd(read_fd), read_fd, inode)
     };
 
     // capture inode of stdout pipe
@@ -142,7 +142,7 @@ pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: 
     // function returns killing the thread before it can read the output.
     if !is_proc_forked() {
         unsafe {
-            let _ = STDOUT_STREAM_THREAD.insert(stream_thread);
+            let _ = STDOUT_STREAM_THREAD.insert((stream_thread, read_fd));
             let res = libc::atexit(wait_for_output);
 
             debug(if res == 0 {
@@ -171,6 +171,14 @@ extern "C" fn wait_for_output() {
         return;
     }
 
+    let (thread, read_fd) = match unsafe { STDOUT_STREAM_THREAD.take() } {
+        Some(t) => t,
+        None => {
+            debug("failed to get stdout thread");
+            return;
+        }
+    };
+
     unsafe {
         libc::fflush(ptr::null_mut());
     }
@@ -179,6 +187,7 @@ extern "C" fn wait_for_output() {
         if let Some(fds) = state
             .stdout_inode
             .and_then(|i| get_open_fds_by_inode(i).ok())
+            .map(|fds| fds.into_iter().filter(|fd| *fd != read_fd).collect::<Vec<_>>())
         {
             for fd in &fds {
                 unsafe {
@@ -186,17 +195,9 @@ extern "C" fn wait_for_output() {
                 }
             }
 
-            debug(format!("closed {} fds pointing to stdout", fds.len()));
+            debug(format!("closed {:?} fds pointing to stdout", fds));
         }
     }
-
-    let thread = match unsafe { STDOUT_STREAM_THREAD.take() } {
-        Some(t) => t,
-        None => {
-            debug("failed to get stdout thread");
-            return;
-        }
-    };
 
     // it's very possible there are still open fd's to the write end
     // of the stdout pipe at this point.
