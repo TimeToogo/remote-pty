@@ -2221,11 +2221,11 @@ index 00000000..0e1d535a
 +    give_terminal_to(pid, 0);
 +    // notify child that it's ready
 +    write(pipefd[1], "1", 1);
++    close(pipefd[1]);
 +
 +    // wait for child to complete
 +    waitpid(pid, &res, 0);
 +    give_terminal_to(getpgid(0), 0);
-+    close(pipefd[1]);
 +  }
 +
 +cleanup:
