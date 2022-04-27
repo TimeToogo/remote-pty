@@ -3,6 +3,9 @@ use bincode::{Decode, Encode};
 // Derived from libc termios structure
 // @see https://code.woboq.org/userspace/glibc/sysdeps/unix/sysv/linux/bits/termios-struct.h.html#termios
 // @see https://fossies.org/dox/musl-1.2.2/structtermios.html
+// @see https://www.man7.org/linux/man-pages/man3/termios.3.html
+// TODO: for better cross platform support we should parse & decompose termios
+// bit flags from the slave into enums that can be reconstructed on the master
 #[derive(Encode, Decode, PartialEq, Debug, Clone)]
 pub struct Termios {
     pub c_iflag: u32,   /* input mode flags */
