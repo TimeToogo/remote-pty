@@ -136,13 +136,14 @@ pub(crate) fn init_stdout(conf: &Conf, mut chan: RemoteChannel, pre_fork_state: 
         }
     });
 
-    // this is here to prevent the stdout thread being terminated
-    // before it has a change to send the stdout buffer to the remote.
-    // this occurs when there is still buffered output after the main
-    // function returns killing the thread before it can read the output.
+    unsafe {
+        let _ = STDOUT_STREAM_THREAD.insert((stream_thread, read_fd));
+    }
+    
+    // if we forked our atexit handler will have already been registered
+    // and we dont want to duplicate it
     if !is_proc_forked() {
         unsafe {
-            let _ = STDOUT_STREAM_THREAD.insert((stream_thread, read_fd));
             let res = libc::atexit(wait_for_output);
 
             debug(if res == 0 {
