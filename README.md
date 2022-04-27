@@ -11,4 +11,8 @@ TODO:
 - [x] SIGWINCH|SIG* handling (requires listener on slave side)
 - [x] process group control and SIGTTOU/SIGTTIN handling
 - [x] filter pty by pipe inodes rather than fd numbers
-- [ ] auto extract shared lib and set LD_PRELOAD from static bash?
+- [ ] cross compile for arm and strip binaries
+- [ ] ci/cd to s3
+- [ ] integrate into tunshell
+- [ ] README
+- [ ] better cross platform termios?
