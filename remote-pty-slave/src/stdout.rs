@@ -181,6 +181,7 @@ extern "C" fn wait_for_output() {
     };
 
     unsafe {
+        // flush any remaining buffers
         libc::fflush(ptr::null_mut());
     }
 
@@ -214,8 +215,7 @@ extern "C" fn wait_for_output() {
         let _ = thread.join();
         let _ = sender.send(1);
     });
-    // let res = receiver.recv_timeout(Duration::from_secs(3));
-    let res = receiver.recv();
+    let res = receiver.recv_timeout(Duration::from_secs(3));
 
     if let Err(err) = res {
         debug(format!("could not join stdout: {:?}", err));
