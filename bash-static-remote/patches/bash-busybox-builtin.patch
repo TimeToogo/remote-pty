@@ -32,10 +32,10 @@ index b349e93c..8396f8fd 100644
 \ No newline at end of file
 diff --git a/builtins/busybox.def b/builtins/busybox.def
 new file mode 100644
-index 00000000..56121354
+index 00000000..0e1d535a
 --- /dev/null
 +++ b/builtins/busybox.def
-@@ -0,0 +1,2585 @@
+@@ -0,0 +1,2586 @@
 +This file is busybox.def, from which is created busybox.c.
 +It implements the builtin "busybox" in Bash.
 +
@@ -2225,6 +2225,7 @@ index 00000000..56121354
 +    // wait for child to complete
 +    waitpid(pid, &res, 0);
 +    give_terminal_to(getpgid(0), 0);
++    close(pipefd[1]);
 +  }
 +
 +cleanup:
