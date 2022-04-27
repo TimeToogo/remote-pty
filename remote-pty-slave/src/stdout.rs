@@ -184,6 +184,8 @@ extern "C" fn wait_for_output() {
     }
 
     if let Ok(state) = conf.state.lock() {
+        debug(format!("closing fds pointing to inode {:?}", state.stdout_inode));
+
         if let Some(fds) = state
             .stdout_inode
             .and_then(|i| get_open_fds_by_inode(i).ok())
@@ -211,7 +213,8 @@ extern "C" fn wait_for_output() {
         let _ = thread.join();
         let _ = sender.send(1);
     });
-    let res = receiver.recv_timeout(Duration::from_secs(3));
+    // let res = receiver.recv_timeout(Duration::from_secs(3));
+    let res = receiver.recv();
 
     if let Err(err) = res {
         debug(format!("could not join stdout: {:?}", err));
