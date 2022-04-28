@@ -48,6 +48,7 @@ jobs:
         cp -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}
         cp -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
         strip releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
+        rm -f releases/bash
       working-directory: bash-static-remote
       shell: bash
     - uses: actions/upload-artifact@v2  
@@ -141,6 +142,7 @@ jobs:
           cp -v releases/bash releases/bash-linux-aarch64
           cp -v releases/bash releases/bash-linux-aarch64-stripped
           strip releases/bash-linux-aarch64-stripped
+          rm -f releases/bash
 
     - uses: actions/upload-artifact@v2  
       with:
