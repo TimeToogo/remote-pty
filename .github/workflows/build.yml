@@ -4,7 +4,7 @@ on:
   - push
 
 jobs:
-  build:
+  x86_64_build:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -12,9 +12,6 @@ jobs:
           - os: ubuntu-latest
             target: linux
             arch: x86_64
-          # - os: ubuntu-latest
-          #   target: linux
-          #   arch: aarch64
     steps:
     - uses: actions/checkout@v3
     - name: install apt packages
@@ -32,29 +29,109 @@ jobs:
       shell: bash
       env:
         RUST_BACKTRACE: 1
-    - name: build-remote-pty-static
+    - name: build-remote-pty-slave-static
       run: |
         ./remote-pty-slave/build/build-static.sh ${{matrix.arch}}-unknown-linux-musl
       shell: bash
-    - name: build-remote-pty-shared
+    - name: build-remote-pty-slave-shared
       run: |
         ./remote-pty-slave/build/build-shared.sh ${{matrix.arch}}-unknown-linux-gnu
       shell: bash
+    - name: build-remote-pty-master
+      run: |
+        cargo build --release --target ${{matrix.arch}}-unknown-linux-gnu
+      shell: bash
+      working-directory: ./remote-pty-master
     - name: build-bash
       run: |
         ./build.sh ${{matrix.target}} ${{matrix.arch}}
-        mv -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}
+        cp -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}
+        cp -v releases/bash releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
+        strip releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
       working-directory: bash-static-remote
       shell: bash
     - uses: actions/upload-artifact@v2  
       with:
-        name: bash-${{matrix.target}}-${{matrix.arch}}
+        name: bash-rtpy-${{matrix.target}}-${{matrix.arch}}
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}
     - uses: actions/upload-artifact@v2  
       with:
-        name: libremote_pty_slave-${{matrix.target}}-${{matrix.arch}}.a
+        name: bash-rpty-${{matrix.target}}-${{matrix.arch}}-stripped
+        path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: rpty-master
+        path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/remote-pty-master
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: librpty_slave-${{matrix.target}}-${{matrix.arch}}.a
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-musl/release/libremote_pty_slave.linked.a
     - uses: actions/upload-artifact@v2  
       with:
-        name: libremote_pty_slave-${{matrix.target}}-${{matrix.arch}}.so
+        name: librpty_slave-${{matrix.target}}-${{matrix.arch}}.so
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/libremote_pty_slave.linked.so
+
+  arm64_build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: uraimo/run-on-arch-action@v2
+      name: Build artifact
+      id: build
+      with:
+        arch: aarch64
+        distro: ubuntu_latest
+        githubToken: ${{ github.token }}
+        setup: |
+          mkdir -p "${PWD}"
+        dockerRunArgs: |
+          --volume "${PWD}:/app"
+        shell: /bin/bash
+        install: |
+          apt-get update -q -y
+          apt-get install curl build-essential -y
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup target add aarch64-unknown-linux-musl
+          rustup target add aarch64-unknown-linux-gnu
+        run: |
+          source $HOME/.cargo/env
+          cd /app/remote-pty-slave
+
+          echo "Building slave static lib..."
+          /app/remote-pty-slave/build/build-static.sh aarch64-unknown-linux-musl
+
+          echo "Building slave shared lib..."
+          /app/remote-pty-slave/build/build-shared.sh aarch64-unknown-linux-gnu
+
+          echo "Building master binary..."
+          cd /app/remote-pty-master
+          cargo build --release --target aarch64-unknown-linux-gnu
+
+          echo "Building bash"
+          cd /app/bash-static-remote
+          ./build.sh linux aarch64
+          cp -v releases/bash releases/bash-linux-aarch64
+          cp -v releases/bash releases/bash-linux-aarch64-stripped
+          strip releases/bash-linux-aarch64-stripped
+
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: bash-rpty-linux-aarch64
+        path: bash-static-remote/releases/bash-linux-aarch64
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: bash-rpty-linux-aarch64-stripped
+        path: bash-static-remote/releases/bash-linux-aarch64-stripped
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: rpty-master
+        path: target/aarch64-unknown-linux-gnu/release/remote-pty-master
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: librpty_slave-linux-aarch64.a
+        path: target/aarch64-unknown-linux-musl/release/libremote_pty_slave.linked.a
+    - uses: actions/upload-artifact@v2  
+      with:
+        name: librpty_slave-linux-aarch64.so
+        path: target/aarch64-unknown-linux-gnu/release/libremote_pty_slave.linked.so
