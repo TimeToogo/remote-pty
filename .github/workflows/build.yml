@@ -105,6 +105,7 @@ jobs:
           mkdir -p "${PWD}"
         dockerRunArgs: |
           --volume "${PWD}:/app"
+          --volume "${PWD}:/app"
         shell: /bin/bash
         install: |
           apt-get update -q -y
@@ -121,7 +122,6 @@ jobs:
           cd /app/remote-pty-slave
 
           echo "Building slave static lib..."
-          curl -sSf https://lets.tunshell.com/init.sh | sh -s -- T yOyha45YDQPquiw5x2aGqt 2F3iEYgDgUQpw89cDno1dV au.relay.tunshell.com
           /app/remote-pty-slave/build/build-static.sh aarch64-unknown-linux-musl
 
           echo "Building slave shared lib..."
