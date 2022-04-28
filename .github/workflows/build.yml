@@ -70,6 +70,24 @@ jobs:
       with:
         name: librpty_slave-${{matrix.target}}-${{matrix.arch}}.so
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/libremote_pty_slave.linked.so
+    
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.ARTIFACT_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    # Deploy artifact to https://rpty-artifacts.tunshell.com
+    - name: Deploy to S3
+      run: >
+        aws s3 cp --recursive bash-static-remote/releases/ s3://rpty-artifacts/
+        --acl=public-read 
+        --cache-control max-age=31536000
+        --metadata-directive REPLACE
+      shell: bash
+
+    - name: Invalidate CloudFront
+      run: aws cloudfront create-invalidation --distribution-id=E2J9NPXI4IHDJA --paths '/*'
 
   arm64_build:
     runs-on: ubuntu-latest
@@ -86,14 +104,23 @@ jobs:
           mkdir -p "${PWD}"
         dockerRunArgs: |
           --volume "${PWD}:/app"
+          --volume "${PWD}:/app"
         shell: /bin/bash
         install: |
           apt-get update -q -y
-          apt-get install curl build-essential -y
+          apt-get install curl build-essential ca-certificates gnupg lsb-release -y
+          echo "Installing rust..."
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source $HOME/.cargo/env
           rustup target add aarch64-unknown-linux-musl
           rustup target add aarch64-unknown-linux-gnu
+          echo "Installing docker..."
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg\
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -q -y
+          apt-get install docker-ce docker-ce-cli containerd.io -y
         run: |
           source $HOME/.cargo/env
           cd /app/remote-pty-slave
@@ -135,3 +162,21 @@ jobs:
       with:
         name: librpty_slave-linux-aarch64.so
         path: target/aarch64-unknown-linux-gnu/release/libremote_pty_slave.linked.so
+            
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.ARTIFACT_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+            
+    # Deploy artifact to https://rpty-artifacts.tunshell.com
+    - name: Deploy to S3
+      run: >
+        aws s3 cp --recursive bash-static-remote/releases/ s3://rpty-artifacts/
+        --acl=public-read 
+        --cache-control max-age=31536000
+        --metadata-directive REPLACE
+      shell: bash
+
+    - name: Invalidate CloudFront
+      run: aws cloudfront create-invalidation --distribution-id=E2J9NPXI4IHDJA --paths '/*'
