@@ -108,7 +108,7 @@ jobs:
         shell: /bin/bash
         install: |
           apt-get update -q -y
-          apt-get install curl build-essential ca-certificates gnupg lsb-release -y
+          apt-get install curl build-essential ca-certificates gnupg lsb-release file autoconf zip netcat lsof linux-headers-generic -y
           echo "Installing rust..."
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source $HOME/.cargo/env
