@@ -105,7 +105,6 @@ jobs:
           mkdir -p "${PWD}"
         dockerRunArgs: |
           --volume "${PWD}:/app"
-          --volume "${PWD}:/app"
         shell: /bin/bash
         install: |
           apt-get update -q -y
