@@ -174,8 +174,17 @@ impl Server {
         let mut client = match self.get_active_client() {
             Some(c) => c,
             None => {
-                debug("attempted send signal while no active pgrp, discarding");
-                return EventHandleResult::ErrorIgnore;
+                debug("attempted send signal while no active pgrp");
+                return match signal {
+                    PtyMasterSignal::SIGINT | PtyMasterSignal::SIGTERM => {
+                        debug("stopping server");
+                        EventHandleResult::ErrorTerminateServer
+                    }
+                    _ => {
+                        debug("ignoring signal");
+                        EventHandleResult::ErrorIgnore
+                    }
+                };
             }
         };
 
