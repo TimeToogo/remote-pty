@@ -130,7 +130,8 @@ impl PtySlaveCallType {
             Self::SendBreak(_) => true,
             Self::SetWinSize(_) => true,
             Self::Ioctl(_) => true,
-            Self::SetProgGroup(_) => true,
+            // allow procs to steal the terminal which happens during shell forking
+            Self::SetProgGroup(_) => false,
             Self::WriteStdout(_) => true,
             _ => false
         }
