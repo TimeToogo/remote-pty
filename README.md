@@ -13,6 +13,6 @@ TODO:
 - [x] filter pty by pipe inodes rather than fd numbers
 - [x] cross compile for arm and strip binaries
 - [x] ci/cd to s3
-- [ ] integrate into tunshell
+- [x] integrate into tunshell
 - [ ] README
 - [ ] better cross platform termios?

@@ -47,16 +47,7 @@ mod tests {
         let ctx = Context::openpty().unwrap();
         let mock_req = TcSetAttrCall {
             optional_actions: TcSetAttrActions::TCSANOW,
-            termios: Termios {
-                c_iflag: 0,
-                c_oflag: 0,
-                c_cflag: 0,
-                c_lflag: 0,
-                c_line: 0,
-                c_cc: [0; 32],
-                c_ispeed: 0,
-                c_ospeed: 0,
-            },
+            termios: Termios::from_libc_termios(&Termios::zeroed_libc_termios()),
         };
 
         let ret = handle_tcsetattr(&ctx, mock_req);
@@ -75,16 +66,7 @@ mod tests {
         let ctx = Context::invalid_fds();
         let mock_req = TcSetAttrCall {
             optional_actions: TcSetAttrActions::TCSANOW,
-            termios: Termios {
-                c_iflag: 0,
-                c_oflag: 0,
-                c_cflag: 0,
-                c_lflag: 0,
-                c_line: 0,
-                c_cc: [0; 32],
-                c_ispeed: 0,
-                c_ospeed: 0,
-            },
+            termios: Termios::from_libc_termios(&Termios::zeroed_libc_termios()),
         };
 
         let ret = handle_tcsetattr(&ctx, mock_req);

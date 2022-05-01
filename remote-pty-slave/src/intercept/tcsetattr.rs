@@ -106,37 +106,13 @@ mod tests {
 
     #[test]
     fn test_tcsetattr() {
-        let mock_termios = Termios {
-            c_iflag: 1,
-            c_oflag: 2,
-            c_cflag: 3,
-            c_lflag: 4,
+        let mut mock_termios = libc::termios {
+            c_iflag: libc::IGNBRK,
+            c_oflag: libc::OCRNL,
+            c_cflag: libc::CREAD,
+            c_lflag: libc::ISIG,
             #[cfg(target_os = "linux")]
-            c_line: 5,
-            #[cfg(not(target_os = "linux"))]
             c_line: 0,
-            c_cc: [0; 32],
-            c_ispeed: 6,
-            c_ospeed: 7,
-        };
-        let expected_req = PtySlaveCall {
-            fd: Fd(1),
-            typ: PtySlaveCallType::SetAttr(TcSetAttrCall {
-                optional_actions: TcSetAttrActions::TCSANOW,
-                termios: mock_termios.clone(),
-            }),
-        };
-        let mock_res = PtySlaveResponse::Success(0);
-
-        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
-
-        let mut termios = libc::termios {
-            c_iflag: 1,
-            c_oflag: 2,
-            c_cflag: 3,
-            c_lflag: 4,
-            #[cfg(target_os = "linux")]
-            c_line: 5,
             c_cc: [0; libc::NCCS],
             #[cfg(any(target_env = "gnu", target_os = "macos"))]
             c_ispeed: 6,
@@ -147,12 +123,23 @@ mod tests {
             #[cfg(target_env = "musl")]
             __c_ospeed: 7,
         };
+        
+        let expected_req = PtySlaveCall {
+            fd: Fd(1),
+            typ: PtySlaveCallType::SetAttr(TcSetAttrCall {
+                optional_actions: TcSetAttrActions::TCSANOW,
+                termios: Termios::from_libc_termios(&mock_termios),
+            }),
+        };
+        let mock_res = PtySlaveResponse::Success(0);
+
+        let mock = MockChannel::assert_sends(Channel::PTY, vec![expected_req], vec![mock_res]);
 
         let res = tcsetattr_chan(
             mock.chan.clone(),
             1,
             libc::TCSANOW,
-            &mut termios as *mut libc::termios,
+            &mut mock_termios as *mut libc::termios,
         );
 
         assert_eq!(res, 0);

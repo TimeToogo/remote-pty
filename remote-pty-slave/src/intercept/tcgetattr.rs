@@ -89,16 +89,7 @@ mod tests {
             fd: Fd(1),
             typ: PtySlaveCallType::GetAttr,
         };
-        let mock_termios = Termios {
-            c_iflag: 1,
-            c_oflag: 2,
-            c_cflag: 3,
-            c_lflag: 4,
-            c_line: 5,
-            c_cc: [1; 32],
-            c_ispeed: 6,
-            c_ospeed: 7,
-        };
+        let mock_termios = Termios::from_libc_termios(&Termios::zeroed_libc_termios());
         let mock_res = PtySlaveResponse::GetAttr(TcGetAttrResponse {
             ret: 0,
             termios: mock_termios,
@@ -111,22 +102,22 @@ mod tests {
         let res = tcgetattr_chan(mock.chan.clone(), 1, &mut termios as *mut libc::termios);
 
         assert_eq!(res, 0);
-        assert_eq!(termios.c_iflag, 1);
-        assert_eq!(termios.c_oflag, 2);
-        assert_eq!(termios.c_cflag, 3);
-        assert_eq!(termios.c_lflag, 4);
+        assert_eq!(termios.c_iflag, 0);
+        assert_eq!(termios.c_oflag, 0);
+        assert_eq!(termios.c_cflag, 0);
+        assert_eq!(termios.c_lflag, 0);
         #[cfg(target_os = "linux")]
-        assert_eq!(termios.c_line, 5);
-        assert_eq!(termios.c_cc, [1; libc::NCCS]);
+        assert_eq!(termios.c_line, 0);
+        assert_eq!(termios.c_cc, [0; libc::NCCS]);
         #[cfg(any(target_env = "gnu", target_os = "macos"))]
         {
-            assert_eq!(termios.c_ispeed, 6);
-            assert_eq!(termios.c_ospeed, 7);
+            assert_eq!(termios.c_ispeed, 0);
+            assert_eq!(termios.c_ospeed, 0);
         }
         #[cfg(target_env = "musl")]
         {
-            assert_eq!(termios.__c_ispeed, 6);
-            assert_eq!(termios.__c_ospeed, 7);
+            assert_eq!(termios.__c_ispeed, 0);
+            assert_eq!(termios.__c_ospeed, 0);
         }
     }
 }
