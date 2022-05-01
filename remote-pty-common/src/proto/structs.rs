@@ -336,6 +336,10 @@ impl Termios {
             c_ispeed: term.__c_ispeed as _,
             #[cfg(target_env = "musl")]
             c_ospeed: term.__c_ospeed as _,
+            #[cfg(not(any(target_env = "gnu", target_os = "macos", target_env = "musl")))]
+            c_ispeed: 0,
+            #[cfg(not(any(target_env = "gnu", target_os = "macos", target_env = "musl")))]
+            c_ospeed: 0,
         }
     }
 
