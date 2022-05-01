@@ -61,7 +61,7 @@ jobs:
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
     - uses: actions/upload-artifact@v2  
       with:
-        name: rpty-master
+        name: rpty-master-${{matrix.arch}}
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/remote-pty-master
     - uses: actions/upload-artifact@v2  
       with:
@@ -148,7 +148,7 @@ jobs:
         path: bash-static-remote/releases/bash-linux-aarch64-stripped
     - uses: actions/upload-artifact@v2  
       with:
-        name: rpty-master
+        name: rpty-master-aarch64
         path: target/aarch64-unknown-linux-gnu/release/remote-pty-master
     - uses: actions/upload-artifact@v2  
       with:
