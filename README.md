@@ -40,13 +40,13 @@ Take the simple case where you have a local terminal emulator and shell:
 
 ### SSH
 
-In the case of SSH we have moving parts on both the client and server:
+In the case of SSH we have a PTY instance on both the client and server:
 
 ![SSH remote shell diagram](https://lucid.app/publicSegments/view/988105ad-dd25-43a7-97c8-80be52a6f9b0/image.png)
 
 The local ssh client puts the local PTY into "raw mode" disabling all buffering and processing becoming a pass-through.
 
-SSHD creates a PTY instance on the remote host. The PTY on the remote provides the line-editing and interactive features. SSHD spawns a shell and connects it's stdin/stdout/stderr fd's to the slave side of the PTY.
+SSHD creates a PTY instance on the remote host. The PTY on the remote provides the line-editing and interactive features. SSHD spawns a shell and connects its stdin/stdout/stderr to the slave side of the PTY.
 
 ### RPTY 
 
@@ -63,12 +63,12 @@ In order for RPTY to work it has to be able to be able to intercept calls made t
 
 ### Static-linking
 
-RPTY can be built as a static-archive linked against musl. This archive then needs to be statically linked against the shell and build time.
-This approach removes runtime dependencies as it becomes compiled into the shell binary however it does not work with exec'd processes making the shell much less useful. This is somewhat mitigated by the bash build script in this repo which statically links to [busybox](https://busybox.net).
+RPTY can be built as a static-archive linked against musl. This archive then needs to be statically linked against the shell at build time.
+This approach removes runtime dependencies as it is compiled into the shell binary. However, it does not work with exec'd processes making the shell much less useful. This is somewhat mitigated by the bash build script in this repo which statically links to [busybox](https://busybox.net).
 
 ### Dynamic linking
 
-RPTY can also by built against GNU libc as a shared library. Then it can be injected into any shell at runtime via `LD_PRELOAD`. This approach should work with any exec'd processes which inherit the `LD_PRELOAD` environment variable.
+RPTY can also be built against GNU libc as a shared library. Then it can be injected into any shell at runtime via `LD_PRELOAD`. This approach should work with any exec'd processes which inherit the `LD_PRELOAD` environment variable.
 
 ## Supported targets
 
