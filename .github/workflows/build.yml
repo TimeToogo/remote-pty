@@ -8,6 +8,7 @@ jobs:
     name: ${{ matrix.arch }} build (${{ matrix.os }})
     runs-on: ${{matrix.os}}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
@@ -32,7 +33,7 @@ jobs:
         $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-gnu
     - name: test-remote-pty
       run: |
-        cargo test --release
+        cargo test --release --target ${{matrix.arch}}-unknown-linux-gnu
       shell: bash
       env:
         RUST_BACKTRACE: 1
