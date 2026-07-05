@@ -45,9 +45,19 @@ objcopy --strip-all --discard-all --keep-symbols=libc.keepsyms musl-libc.prefixe
 rm -rf muslobjects &&  mkdir -p muslobjects
 ar x musl-libc.copied.a --output=muslobjects
 # remove all objects with empty symtab
-find muslobjects/ -type f -exec sh -c '[[ $(nm {} 2>&1 | grep "no symbols") > 0 ]] && rm -f {}' \;
+find muslobjects/ -type f -exec sh -c '
+    for file do
+        if nm "$file" 2>&1 | grep -q "no symbols"; then
+            rm -f "$file"
+        fi
+    done
+' sh {} +
 # prefix object files to prevent collisions and recombine into static lib
-find muslobjects/ -type f -exec sh -c 'mv {} $(dirname {})/__libc__$(basename {})' \;
+find muslobjects/ -type f -exec sh -c '
+    for file do
+        mv "$file" "$(dirname "$file")/__libc__$(basename "$file")"
+    done
+' sh {} +
 rm -f musl-libc.filtered.a
 ar crs musl-libc.filtered.a muslobjects/*
 

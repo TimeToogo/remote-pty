@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: linux
             arch: x86_64
     steps:
@@ -91,7 +91,7 @@ jobs:
       run: aws cloudfront create-invalidation --distribution-id=E2J9NPXI4IHDJA --paths '/*'
 
   arm64_build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
     - uses: uraimo/run-on-arch-action@v2
@@ -99,7 +99,7 @@ jobs:
       id: build
       with:
         arch: aarch64
-        distro: ubuntu_latest
+        distro: ubuntu22.04
         githubToken: ${{ github.token }}
         setup: |
           mkdir -p "${PWD}"
