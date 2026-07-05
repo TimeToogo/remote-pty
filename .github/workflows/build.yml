@@ -4,7 +4,8 @@ on:
   - push
 
 jobs:
-  x86_64_build:
+  build:
+    name: ${{ matrix.arch }} build (${{ matrix.os }})
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -12,15 +13,21 @@ jobs:
           - os: ubuntu-22.04
             target: linux
             arch: x86_64
+            extra_apt_packages: ""
+          - os: ubuntu-22.04-arm
+            target: linux
+            arch: aarch64
+            extra_apt_packages: musl-dev
     steps:
     - uses: actions/checkout@v3
     - name: install apt packages
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -qq build-essential gpg
+        sudo apt-get install -qq build-essential gpg ca-certificates curl file autoconf zip netcat-openbsd lsof linux-headers-generic ${{ matrix.extra_apt_packages }}
     - name: install rust
       run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
         $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-musl
         $HOME/.cargo/bin/rustup target add ${{matrix.arch}}-unknown-linux-gnu
     - name: test-remote-pty
@@ -53,7 +60,7 @@ jobs:
       shell: bash
     - uses: actions/upload-artifact@v4
       with:
-        name: bash-rtpy-${{matrix.target}}-${{matrix.arch}}
+        name: bash-rpty-${{matrix.target}}-${{matrix.arch}}
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}
     - uses: actions/upload-artifact@v4
       with:
@@ -78,93 +85,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    # Deploy artifact to https://rpty-artifacts.tunshell.com
-    - name: Deploy to S3
-      run: >
-        aws s3 cp --recursive bash-static-remote/releases/ s3://rpty-artifacts/
-        --acl=public-read 
-        --cache-control max-age=31536000
-        --metadata-directive REPLACE
-      shell: bash
-
-    - name: Invalidate CloudFront
-      run: aws cloudfront create-invalidation --distribution-id=E2J9NPXI4IHDJA --paths '/*'
-
-  arm64_build:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - uses: uraimo/run-on-arch-action@v2
-      name: Build artifact
-      id: build
-      with:
-        arch: aarch64
-        distro: ubuntu22.04
-        githubToken: ${{ github.token }}
-        setup: |
-          mkdir -p "${PWD}"
-        dockerRunArgs: |
-          --volume "${PWD}:/app"
-        shell: /bin/bash
-        install: |
-          apt-get update -q -y
-          apt-get install curl build-essential ca-certificates gnupg lsb-release file autoconf zip netcat-openbsd lsof linux-headers-generic -y
-          echo "Installing rust..."
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source $HOME/.cargo/env
-          rustup target add aarch64-unknown-linux-musl
-          rustup target add aarch64-unknown-linux-gnu
-          echo "Installing docker..."
-          curl --proto '=https' --tlsv1.2 -fsSL https://get.docker.com | sh -s
-        run: |
-          source $HOME/.cargo/env
-          cd /app/remote-pty-slave
-
-          echo "Building slave static lib..."
-          /app/remote-pty-slave/build/build-static.sh aarch64-unknown-linux-musl
-
-          echo "Building slave shared lib..."
-          /app/remote-pty-slave/build/build-shared.sh aarch64-unknown-linux-gnu
-
-          echo "Building master binary..."
-          cd /app/remote-pty-master
-          cargo build --release --target aarch64-unknown-linux-gnu
-
-          echo "Building bash"
-          cd /app/bash-static-remote
-          ./build.sh linux aarch64
-          cp -v releases/bash releases/bash-linux-aarch64
-          cp -v releases/bash releases/bash-linux-aarch64-stripped
-          strip releases/bash-linux-aarch64-stripped
-          rm -f releases/bash
-
-    - uses: actions/upload-artifact@v4
-      with:
-        name: bash-rpty-linux-aarch64
-        path: bash-static-remote/releases/bash-linux-aarch64
-    - uses: actions/upload-artifact@v4
-      with:
-        name: bash-rpty-linux-aarch64-stripped
-        path: bash-static-remote/releases/bash-linux-aarch64-stripped
-    - uses: actions/upload-artifact@v4
-      with:
-        name: rpty-master-aarch64
-        path: target/aarch64-unknown-linux-gnu/release/remote-pty-master
-    - uses: actions/upload-artifact@v4
-      with:
-        name: librpty_slave-linux-aarch64.a
-        path: target/aarch64-unknown-linux-musl/release/libremote_pty_slave.linked.a
-    - uses: actions/upload-artifact@v4
-      with:
-        name: librpty_slave-linux-aarch64.so
-        path: target/aarch64-unknown-linux-gnu/release/libremote_pty_slave.linked.so
-            
-    - uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.ARTIFACT_AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-            
     # Deploy artifact to https://rpty-artifacts.tunshell.com
     - name: Deploy to S3
       run: >

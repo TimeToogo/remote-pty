@@ -23,8 +23,14 @@ TARGETDIR=${CARGO_TARGET_DIR:-$DIR/../../target}/$target/release
 cd $TARGETDIR
 
 # get a compiled musl libc static lib
-echo "= downloading $ARCH musl libc.a"
-docker run --rm muslcc/x86_64:$ARCH-linux-musl cat /$ARCH-linux-musl/lib/libc.a > musl-libc.a
+local_musl_lib="/usr/lib/$ARCH-linux-musl/libc.a"
+if [ -f "$local_musl_lib" ]; then
+    echo "= using $local_musl_lib"
+    cp "$local_musl_lib" musl-libc.a
+else
+    echo "= downloading $ARCH musl libc.a"
+    docker run --rm muslcc/x86_64:$ARCH-linux-musl cat /$ARCH-linux-musl/lib/libc.a > musl-libc.a
+fi
 
 # we prefix all libc symbols with __libc__*
 # so our remote pty static lib can link against the musl impl's
