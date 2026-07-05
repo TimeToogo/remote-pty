@@ -20,7 +20,7 @@ jobs:
             arch: aarch64
             extra_apt_packages: musl-dev
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - name: install apt packages
       run: |
         sudo apt-get update -qq
@@ -59,28 +59,28 @@ jobs:
         rm -f releases/bash
       working-directory: bash-static-remote
       shell: bash
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: bash-rpty-${{matrix.target}}-${{matrix.arch}}
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: bash-rpty-${{matrix.target}}-${{matrix.arch}}-stripped
         path: bash-static-remote/releases/bash-${{matrix.target}}-${{matrix.arch}}-stripped
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: rpty-master-${{matrix.arch}}
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/remote-pty-master
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: librpty_slave-${{matrix.target}}-${{matrix.arch}}.a
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-musl/release/libremote_pty_slave.linked.a
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: librpty_slave-${{matrix.target}}-${{matrix.arch}}.so
         path: target/${{matrix.arch}}-unknown-${{matrix.target}}-gnu/release/libremote_pty_slave.linked.so
     
-    - uses: aws-actions/configure-aws-credentials@v1
+    - uses: aws-actions/configure-aws-credentials@v6
       with:
         aws-access-key-id: ${{ secrets.ARTIFACT_AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
