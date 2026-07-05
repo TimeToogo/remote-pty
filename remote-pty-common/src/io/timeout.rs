@@ -482,21 +482,25 @@ mod tests {
         }
 
         unsafe {
-            let fds = MaybeUninit::<libc::fd_set>::zeroed().as_mut_ptr();
-            libc::FD_SET(BLOCKED_PIPE[1], fds);
+            let mut fds = MaybeUninit::<libc::fd_set>::zeroed().assume_init();
+            libc::FD_SET(BLOCKED_PIPE[0], &mut fds as *mut _);
 
             let mut timeval = libc::timeval {
-                tv_sec: 0,
-                tv_usec: (millis * 1_000) as i64,
+                tv_sec: (millis / 1_000) as _,
+                tv_usec: ((millis % 1_000) * 1_000) as _,
             };
 
-            libc::select(
-                BLOCKED_PIPE[1] + 1,
-                fds,
+            let res = libc::select(
+                BLOCKED_PIPE[0] + 1,
+                &mut fds as *mut _,
                 ptr::null_mut(),
                 ptr::null_mut(),
                 &mut timeval as *mut _,
             );
+
+            if res == -1 && io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                panic!("select failed: {}", io::Error::last_os_error());
+            }
         }
     }
 }
