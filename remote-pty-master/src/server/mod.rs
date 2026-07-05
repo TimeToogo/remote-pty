@@ -146,7 +146,13 @@ impl Server {
 
         let cur_pgrp = state.pgrp?;
 
-        self.clients.get(&cur_pgrp).map(|i| i.clone())
+        // Clients are keyed by pid, but bash can keep the inherited foreground
+        // pgrp when setpgid is denied. In that case the active pgrp only exists
+        // on Client::pgrp, so fall back to scanning the registered clients.
+        self.clients
+            .get(&cur_pgrp)
+            .or_else(|| self.clients.values().find(|client| client.pgrp == cur_pgrp))
+            .map(|i| i.clone())
     }
 
     fn handle_stdin(&self, data: Vec<u8>) -> EventHandleResult {
@@ -414,5 +420,69 @@ impl ServerHandle {
             .map_err(|err| format!("failed to send terminate event: {}", err))?;
 
         self.join()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io;
+
+    use remote_pty_common::channel::{transport::mem::MemoryTransport, RemoteChannel};
+
+    use crate::context::Context;
+
+    use super::{listener::Listener, Client, Server};
+
+    struct NoopListener;
+
+    impl Listener for NoopListener {
+        fn accept(&mut self) -> io::Result<RemoteChannel> {
+            Err(io::Error::new(io::ErrorKind::Other, "unused test listener"))
+        }
+    }
+
+    fn test_server() -> Server {
+        Server::new(Context::invalid_fds(), Box::new(NoopListener))
+    }
+
+    fn test_client(pid: u32, pgrp: u32) -> Client {
+        let (transport, _) = MemoryTransport::pair();
+        Client {
+            chan: RemoteChannel::new(transport),
+            pid,
+            pgrp,
+        }
+    }
+
+    #[test]
+    fn get_active_client_falls_back_to_matching_process_group() {
+        let mut server = test_server();
+        server.clients.insert(123, test_client(123, 77));
+
+        {
+            let mut state = server.ctx.state.lock().unwrap();
+            state.pgrp = Some(77);
+        }
+
+        let client = server.get_active_client().expect("active client");
+
+        assert_eq!(client.pid, 123);
+        assert_eq!(client.pgrp, 77);
+    }
+
+    #[test]
+    fn get_active_client_still_resolves_pid_keyed_process_group() {
+        let mut server = test_server();
+        server.clients.insert(123, test_client(123, 123));
+
+        {
+            let mut state = server.ctx.state.lock().unwrap();
+            state.pgrp = Some(123);
+        }
+
+        let client = server.get_active_client().expect("active client");
+
+        assert_eq!(client.pid, 123);
+        assert_eq!(client.pgrp, 123);
     }
 }
